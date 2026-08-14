@@ -262,19 +262,6 @@ export const OrganiserProvider: React.FC<{ children: ReactNode }> = ({ children 
     setTasks((prev) => prev.map((t) => (t.id === id ? updatedTask : t)));
     await saveTaskToDB(updatedTask);
 
-    // Update goals dynamically on task completion
-    if (newCompleted) {
-      setGoals((prevGoals) =>
-        prevGoals.map((g) => {
-          const newCount = g.currentCount + 1;
-          const isDone = newCount >= g.targetCount;
-          const updatedGoal: Goal = { ...g, currentCount: newCount, completed: isDone };
-          saveGoalToDB(updatedGoal);
-          return updatedGoal;
-        })
-      );
-    }
-
     if (newCompleted && task.recurrence) {
       const nextDate = getNextRecurrenceDate(task.dueDate, task.recurrence);
       if (nextDate) {
