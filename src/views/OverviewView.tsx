@@ -87,9 +87,9 @@ export const OverviewView: React.FC<OverviewViewProps> = ({ onEditTask }) => {
             setCurrentView('day');
           }}
           className="btn btn-primary"
-          style={{ padding: '0.75rem 1.4rem', fontSize: 'var(--font-md)', minHeight: '44px' }}
+          style={{ padding: '0.55rem 1.1rem', fontSize: 'var(--font-md)', minHeight: '36px' }}
         >
-          <Calendar size={20} /> Open Day Workspace
+          <Calendar size={18} /> Open Day Workspace
         </button>
       </div>
 

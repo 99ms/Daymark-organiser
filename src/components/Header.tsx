@@ -41,7 +41,7 @@ export const Header: React.FC<HeaderProps> = ({ onOpenShortcutsModal }) => {
           type="date"
           value={selectedDate}
           onChange={(e) => e.target.value && setSelectedDate(e.target.value)}
-          style={{ width: '160px', cursor: 'pointer', fontSize: 'var(--font-base)', minHeight: '42px' }}
+          style={{ width: '145px', cursor: 'pointer', fontSize: 'var(--font-md)', minHeight: '36px' }}
         />
 
         <span style={{ fontSize: 'var(--font-lg)', fontWeight: 700, color: 'var(--text-primary)' }}>
