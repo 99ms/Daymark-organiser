@@ -4,6 +4,8 @@ A minimal, local-first personal productivity organiser for planning your days, w
 
 Daymark helps you plan, track, and accomplish your work without cognitive overload, complex cloud setups, or subscription lock-in.
 
+🚀 **Live Demo**: [https://99ms.github.io/Daymark-organiser/](https://99ms.github.io/Daymark-organiser/)
+
 ---
 
 ## 📌 Overview
