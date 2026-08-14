@@ -28,8 +28,6 @@ export const TaskEditorModal: React.FC<TaskEditorModalProps> = ({
     deleteSubtask,
   } = useOrganiser();
 
-  if (!isOpen) return null;
-
   const [title, setTitle] = useState(task?.title || '');
   const [description, setDescription] = useState(task?.description || '');
   const [dueDate, setDueDate] = useState(task?.dueDate || defaultDate || selectedDate || '');
@@ -47,6 +45,8 @@ export const TaskEditorModal: React.FC<TaskEditorModalProps> = ({
   const [recFreq, setRecFreq] = useState<RecurrenceFrequency>(task?.recurrence?.frequency || 'daily');
 
   const [newSubtaskTitle, setNewSubtaskTitle] = useState('');
+
+  if (!isOpen) return null;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
