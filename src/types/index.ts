@@ -113,7 +113,7 @@ export interface TaskTemplate {
 }
 
 export interface UserSettings {
-  theme: 'light' | 'dark' | 'system';
+  theme: 'light' | 'dark' | 'amoled' | 'system';
   accentColor: string;
   startOfWeek: 0 | 1; // 0 = Sunday, 1 = Monday
   dateFormat: string;

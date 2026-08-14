@@ -1,6 +1,7 @@
 import React from 'react';
 import { useOrganiser } from '../context/OrganiserContext';
-import { Search, Sun, Moon, Maximize2, HelpCircle } from 'lucide-react';
+import type { UserSettings } from '../types';
+import { Search, Sun, Moon, Maximize2, HelpCircle, Zap } from 'lucide-react';
 import { format, parseISO } from 'date-fns';
 
 interface HeaderProps {
@@ -26,7 +27,10 @@ export const Header: React.FC<HeaderProps> = ({ onOpenShortcutsModal }) => {
   };
 
   const toggleTheme = () => {
-    const nextTheme = settings.theme === 'dark' ? 'light' : 'dark';
+    let nextTheme: UserSettings['theme'] = 'dark';
+    if (settings.theme === 'dark') nextTheme = 'amoled';
+    else if (settings.theme === 'amoled') nextTheme = 'light';
+    else nextTheme = 'dark';
     updateSettings({ theme: nextTheme });
   };
 
@@ -69,8 +73,8 @@ export const Header: React.FC<HeaderProps> = ({ onOpenShortcutsModal }) => {
           <Maximize2 size={20} />
         </button>
 
-        <button onClick={toggleTheme} className="btn-icon" title="Toggle Light/Dark Theme">
-          {settings.theme === 'dark' ? <Sun size={20} /> : <Moon size={20} />}
+        <button onClick={toggleTheme} className="btn-icon" title={`Theme: ${settings.theme.toUpperCase()} (Click to switch)`}>
+          {settings.theme === 'light' ? <Sun size={20} /> : settings.theme === 'amoled' ? <Zap size={20} style={{ color: '#818cf8' }} /> : <Moon size={20} />}
         </button>
 
         <button onClick={onOpenShortcutsModal} className="btn-icon" title="Keyboard Shortcuts (?)">

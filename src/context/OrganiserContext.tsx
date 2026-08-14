@@ -155,21 +155,17 @@ export const OrganiserProvider: React.FC<{ children: ReactNode }> = ({ children 
 
   useEffect(() => {
     const root = document.documentElement;
-    if (settings.theme === 'dark') {
+    root.classList.remove('light', 'dark', 'amoled');
+
+    if (settings.theme === 'amoled') {
+      root.classList.add('amoled');
+    } else if (settings.theme === 'dark') {
       root.classList.add('dark');
-      root.classList.remove('light');
     } else if (settings.theme === 'light') {
       root.classList.add('light');
-      root.classList.remove('dark');
     } else {
       const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-      if (prefersDark) {
-        root.classList.add('dark');
-        root.classList.remove('light');
-      } else {
-        root.classList.add('light');
-        root.classList.remove('dark');
-      }
+      root.classList.add(prefersDark ? 'dark' : 'light');
     }
   }, [settings.theme]);
 

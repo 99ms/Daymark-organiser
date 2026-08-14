@@ -107,6 +107,7 @@ export const SettingsView: React.FC = () => {
               style={{ width: '100%', marginTop: '0.25rem' }}
             >
               <option value="dark">Dark Mode</option>
+              <option value="amoled">AMOLED (OLED Black)</option>
               <option value="light">Light Mode</option>
               <option value="system">System Preference</option>
             </select>
