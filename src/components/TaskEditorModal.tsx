@@ -1,7 +1,8 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useOrganiser } from '../context/OrganiserContext';
 import type { Task, RecurrenceFrequency, ReminderType } from '../types';
 import { X, Calendar, Clock, Tag, Repeat, Bell, Flag, Folder, Trash2, Plus } from 'lucide-react';
+import { format } from 'date-fns';
 
 interface TaskEditorModalProps {
   task: Task | null;
@@ -28,23 +29,42 @@ export const TaskEditorModal: React.FC<TaskEditorModalProps> = ({
     deleteSubtask,
   } = useOrganiser();
 
-  const [title, setTitle] = useState(task?.title || '');
-  const [description, setDescription] = useState(task?.description || '');
-  const [dueDate, setDueDate] = useState(task?.dueDate || defaultDate || selectedDate || '');
-  const [dueTime, setDueTime] = useState(task?.dueTime || '');
-  const [duration, setDuration] = useState<number>(task?.duration || 30);
-  const [priorityId, setPriorityId] = useState(task?.priorityId || priorities[0]?.id || 'p-med');
-  const [categoryId, setCategoryId] = useState(task?.categoryId || categories[0]?.id || 'c-work');
-  const [projectId, setProjectId] = useState(task?.projectId || '');
-  const [tagsInput, setTagsInput] = useState(task?.tags ? task.tags.join(', ') : '');
-  const [isTopPriority, setIsTopPriority] = useState(task?.isTopPriority || false);
-  const [notes] = useState(task?.notes || '');
-  const [reminder, setReminder] = useState<ReminderType>(task?.reminder || 'none');
-
-  const [hasRecurrence, setHasRecurrence] = useState(!!task?.recurrence);
-  const [recFreq, setRecFreq] = useState<RecurrenceFrequency>(task?.recurrence?.frequency || 'daily');
-
+  const [title, setTitle] = useState('');
+  const [description, setDescription] = useState('');
+  const [dueDate, setDueDate] = useState('');
+  const [dueTime, setDueTime] = useState('');
+  const [duration, setDuration] = useState<number>(30);
+  const [priorityId, setPriorityId] = useState('p-med');
+  const [categoryId, setCategoryId] = useState('c-work');
+  const [projectId, setProjectId] = useState('');
+  const [tagsInput, setTagsInput] = useState('');
+  const [isTopPriority, setIsTopPriority] = useState(false);
+  const [notes, setNotes] = useState('');
+  const [reminder, setReminder] = useState<ReminderType>('none');
+  const [hasRecurrence, setHasRecurrence] = useState(false);
+  const [recFreq, setRecFreq] = useState<RecurrenceFrequency>('daily');
   const [newSubtaskTitle, setNewSubtaskTitle] = useState('');
+
+  useEffect(() => {
+    if (isOpen) {
+      setTitle(task?.title || '');
+      setDescription(task?.description || '');
+      setDueDate(task?.dueDate || defaultDate || selectedDate || format(new Date(), 'yyyy-MM-dd'));
+      setDueTime(task?.dueTime || '');
+      setDuration(task?.duration || 30);
+      setPriorityId(task?.priorityId || priorities[0]?.id || 'p-med');
+      setCategoryId(task?.categoryId || categories[0]?.id || 'c-work');
+      setProjectId(task?.projectId || '');
+      setTagsInput(task?.tags ? task.tags.join(', ') : '');
+      setIsTopPriority(task?.isTopPriority || false);
+      setNotes(task?.notes || '');
+      setReminder(task?.reminder || 'none');
+      setHasRecurrence(!!task?.recurrence);
+      setRecFreq(task?.recurrence?.frequency || 'daily');
+      setNewSubtaskTitle('');
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isOpen, task?.id]);
 
   if (!isOpen) return null;
 
