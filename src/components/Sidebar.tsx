@@ -58,7 +58,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ onOpenNewTaskModal }) => {
           <div className="sidebar-logo">
             <Sparkles size={22} />
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-              <span>Organiser</span>
+              <span>Daymark</span>
               <span
                 style={{
                   fontSize: '0.68rem',

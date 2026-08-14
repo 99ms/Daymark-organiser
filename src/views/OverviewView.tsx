@@ -126,7 +126,7 @@ export const OverviewView: React.FC<OverviewViewProps> = ({ onEditTask }) => {
             </div>
             <div>
               <h2 style={{ fontSize: 'var(--font-lg)', fontWeight: 800, color: 'var(--text-primary)' }}>
-                Welcome to Organiser 👋
+                Welcome to Daymark 👋
               </h2>
               <p style={{ fontSize: 'var(--font-base)', color: 'var(--text-secondary)', marginTop: '0.2rem' }}>
                 Your workspace is ready. We've added a few Getting Started tasks to show you how things work. Complete or remove them whenever you're ready to start organizing your own work.

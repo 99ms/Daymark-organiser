@@ -35,8 +35,8 @@ export const DEFAULT_SETTINGS: UserSettings = {
 export const DEFAULT_PROJECTS: Project[] = [
   {
     id: 'proj-onboarding',
-    name: 'Getting Started with Organiser',
-    description: 'A short tour of the main features of Organiser.',
+    name: 'Getting Started with Daymark',
+    description: 'A short tour of the main features of Daymark.',
     color: '#6366f1',
     deadline: format(addDays(new Date(), 7), 'yyyy-MM-dd'),
     notes: 'Complete or remove these tutorial tasks when you are ready to start organizing your own work.',
@@ -47,7 +47,7 @@ export const DEFAULT_PROJECTS: Project[] = [
 export const DEFAULT_GOALS: Goal[] = [
   {
     id: 'g-onboarding',
-    title: 'Explore Organiser',
+    title: 'Explore Daymark',
     type: 'weekly',
     targetCount: 5,
     currentCount: 0,
@@ -74,7 +74,7 @@ export const DEFAULT_NOTES: Note[] = [
   {
     id: 'n-onboarding',
     title: 'Welcome Note & Keyboard Shortcuts',
-    content: 'Organiser is built for fast, minimal friction planning.\n\nQuick Hotkeys:\n- N : Create new task (Quick Add)\n- F : Toggle Focus Mode\n- D : Open Day View\n- I : Open Inbox\n- Ctrl + K : Global Search',
+    content: 'Daymark is built for fast, minimal friction planning.\n\nQuick Hotkeys:\n- N : Create new task (Quick Add)\n- F : Toggle Focus Mode\n- D : Open Day View\n- I : Open Inbox\n- Ctrl + K : Global Search',
     categoryId: 'c-onboarding',
     projectId: 'proj-onboarding',
     createdAt: today,
@@ -85,7 +85,7 @@ export const DEFAULT_NOTES: Note[] = [
 export const SAMPLE_TASKS: Task[] = [
   {
     id: 'onboarding-task-1',
-    title: 'Welcome to Organiser 👋',
+    title: 'Welcome to Daymark 👋',
     description: 'This is your first task. Complete it to learn how tasks work. You can edit, reschedule, prioritize, and organize every task you create.',
     dueDate: today,
     dueTime: '09:00',

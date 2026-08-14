@@ -646,7 +646,7 @@ export const OrganiserProvider: React.FC<{ children: ReactNode }> = ({ children 
       setNotes((prev) => prev.filter((n) => n.id !== 'n-onboarding'));
     }
 
-    addToast('Getting Started tasks cleared. Enjoy Organiser!', 'success');
+    addToast('Getting Started tasks cleared. Enjoy Daymark!', 'success');
   };
 
   return (
