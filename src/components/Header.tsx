@@ -1,7 +1,7 @@
 import React from 'react';
 import { useOrganiser } from '../context/OrganiserContext';
 import type { UserSettings } from '../types';
-import { Search, Sun, Moon, Maximize2, HelpCircle, Zap } from 'lucide-react';
+import { Search, Sun, Moon, Maximize2, HelpCircle, Zap, Menu } from 'lucide-react';
 import { format, parseISO } from 'date-fns';
 
 interface HeaderProps {
@@ -36,7 +36,18 @@ export const Header: React.FC<HeaderProps> = ({ onOpenShortcutsModal }) => {
 
   return (
     <header className="top-header">
-      <div style={{ display: 'flex', alignItems: 'center', gap: '1.25rem' }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: '0.85rem', flexWrap: 'wrap' }}>
+        <button
+          onClick={() => {
+            const sidebarBtn = document.querySelector('.sidebar-toggle-btn') as HTMLButtonElement;
+            if (sidebarBtn) sidebarBtn.click();
+          }}
+          className="btn-icon mobile-menu-btn"
+          title="Open Menu"
+        >
+          <Menu size={20} />
+        </button>
+
         <button onClick={handleTodayClick} className="btn btn-secondary" title="Jump to Today (T)">
           Today
         </button>
@@ -45,10 +56,10 @@ export const Header: React.FC<HeaderProps> = ({ onOpenShortcutsModal }) => {
           type="date"
           value={selectedDate}
           onChange={(e) => e.target.value && setSelectedDate(e.target.value)}
-          style={{ width: '145px', cursor: 'pointer', fontSize: 'var(--font-md)', minHeight: '36px' }}
+          style={{ width: '135px', cursor: 'pointer', fontSize: 'var(--font-md)', minHeight: '36px' }}
         />
 
-        <span style={{ fontSize: 'var(--font-lg)', fontWeight: 700, color: 'var(--text-primary)' }}>
+        <span className="header-date-title" style={{ fontSize: 'var(--font-lg)', fontWeight: 700, color: 'var(--text-primary)' }}>
           {formattedDateTitle}
         </span>
       </div>

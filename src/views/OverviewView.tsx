@@ -167,7 +167,7 @@ export const OverviewView: React.FC<OverviewViewProps> = ({ onEditTask }) => {
       )}
 
       {/* 4-COLUMN ROW 1: PROGRESS (3 cols) | STREAK (3 cols) | WORKLOAD (3 cols) | THIS WEEK (3 cols) */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(12, 1fr)', gap: '1.5rem' }}>
+      <div className="grid-row-4" style={{ display: 'grid', gridTemplateColumns: 'repeat(12, 1fr)', gap: '1.5rem' }}>
         
         {/* Today's Progress Card (3 cols) */}
         <div
@@ -335,7 +335,7 @@ export const OverviewView: React.FC<OverviewViewProps> = ({ onEditTask }) => {
       </div>
 
       {/* ROW 2: TOP PRIORITIES (6 cols) | OVERDUE TASKS (6 cols) — 50/50 SPLIT */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(12, 1fr)', gap: '1.5rem' }}>
+      <div className="grid-row-2" style={{ display: 'grid', gridTemplateColumns: 'repeat(12, 1fr)', gap: '1.5rem' }}>
         
         {/* Top Priorities Card (6 cols) */}
         <div
@@ -459,7 +459,7 @@ export const OverviewView: React.FC<OverviewViewProps> = ({ onEditTask }) => {
       </div>
 
       {/* ROW 4: ACTIVE PROJECTS (3 cols) | PERSONAL GOALS (3 cols) | RECENT ACTIVITY (3 cols) | QUICK ACTIONS (3 cols) */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(12, 1fr)', gap: '1.5rem' }}>
+      <div className="grid-row-4" style={{ display: 'grid', gridTemplateColumns: 'repeat(12, 1fr)', gap: '1.5rem' }}>
         
         {/* Active Projects (3 cols) */}
         <div
