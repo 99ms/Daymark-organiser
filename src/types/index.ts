@@ -112,6 +112,13 @@ export interface TaskTemplate {
   tasks: Partial<Task>[];
 }
 
+export interface OverviewWidgetConfig {
+  id: string;
+  visible: boolean;
+  colSpan: number; // 3, 6, 12 grid span width
+  order: number;
+}
+
 export interface UserSettings {
   theme: 'light' | 'dark' | 'amoled' | 'system';
   accentColor: string;
@@ -121,6 +128,7 @@ export interface UserSettings {
   defaultDuration: number;
   defaultPriorityId: string;
   notificationsEnabled: boolean;
+  overviewLayout?: OverviewWidgetConfig[];
 }
 
 export interface TaskFilterOptions {
