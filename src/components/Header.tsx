@@ -80,15 +80,16 @@ export const Header: React.FC<HeaderProps> = ({ onOpenShortcutsModal }) => {
           onClick={() => setCurrentView('focus')}
           className={`btn-icon ${currentView === 'focus' ? 'active' : ''}`}
           title="Focus Mode / Pomodoro Timer"
+          aria-label="Focus Mode / Pomodoro Timer"
         >
           <Timer size={20} />
         </button>
 
-        <button onClick={toggleTheme} className="btn-icon" title={`Theme: ${settings.theme.toUpperCase()} (Click to switch)`}>
+        <button onClick={toggleTheme} className="btn-icon" title={`Theme: ${settings.theme.toUpperCase()} (Click to switch)`} aria-label={`Theme: ${settings.theme.toUpperCase()}`}>
           {settings.theme === 'light' ? <Sun size={20} /> : settings.theme === 'amoled' ? <Zap size={20} style={{ color: '#818cf8' }} /> : <Moon size={20} />}
         </button>
 
-        <button onClick={onOpenShortcutsModal} className="btn-icon" title="Keyboard Shortcuts (?)">
+        <button onClick={onOpenShortcutsModal} className="btn-icon" title="Keyboard Shortcuts (?)" aria-label="Keyboard Shortcuts">
           <HelpCircle size={20} />
         </button>
       </div>

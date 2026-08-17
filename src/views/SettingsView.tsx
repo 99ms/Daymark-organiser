@@ -76,14 +76,14 @@ export const SettingsView: React.FC = () => {
   const [themeTokens, setThemeTokens] = useState<ThemeTokens>(DEFAULT_TOKENS);
   const [deleteThemeConfirmId, setDeleteThemeConfirmId] = useState<string | null>(null);
 
-  const loadSnapshots = async () => {
+  const loadSnapshots = React.useCallback(async () => {
     const list = await fetchSnapshots();
     setSnapshots(list);
-  };
+  }, [fetchSnapshots]);
 
   useEffect(() => {
     loadSnapshots();
-  }, []);
+  }, [loadSnapshots]);
 
   const customThemes: CustomTheme[] = settings.customThemes || [];
 
