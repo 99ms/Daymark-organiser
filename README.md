@@ -169,7 +169,7 @@ Daymark stores all user data **locally in your browser** via IndexedDB. No perso
 
 ## 🏷️ Beta Status
 
-Daymark Organiser is currently in **v0.1.0-beta.1**. Features and UI may continue to evolve as the project is tested and refined.
+Daymark Organiser is currently in **v0.2.0-beta.1**. Features and UI may continue to evolve as the project is tested and refined.
 
 ---
 
