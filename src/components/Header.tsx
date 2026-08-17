@@ -1,7 +1,7 @@
 import React from 'react';
 import { useOrganiser } from '../context/OrganiserContext';
 import type { UserSettings } from '../types';
-import { Search, Sun, Moon, Maximize2, HelpCircle, Zap, Menu } from 'lucide-react';
+import { Search, Sun, Moon, Timer, HelpCircle, Zap, Menu } from 'lucide-react';
 import { format, parseISO } from 'date-fns';
 
 interface HeaderProps {
@@ -81,7 +81,7 @@ export const Header: React.FC<HeaderProps> = ({ onOpenShortcutsModal }) => {
           className={`btn-icon ${currentView === 'focus' ? 'active' : ''}`}
           title="Focus Mode / Pomodoro Timer"
         >
-          <Maximize2 size={20} />
+          <Timer size={20} />
         </button>
 
         <button onClick={toggleTheme} className="btn-icon" title={`Theme: ${settings.theme.toUpperCase()} (Click to switch)`}>

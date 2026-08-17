@@ -119,8 +119,34 @@ export interface OverviewWidgetConfig {
   order: number;
 }
 
+export interface ThemeTokens {
+  bgPrimary: string;
+  bgSecondary: string;
+  bgTertiary: string;
+  bgCard: string;
+  bgHover: string;
+  textPrimary: string;
+  textSecondary: string;
+  textMuted: string;
+  borderColor: string;
+  borderFocus: string;
+  accentPrimary: string;
+  accentHover: string;
+  accentLight: string;
+  successColor?: string;
+  warningColor?: string;
+  errorColor?: string;
+}
+
+export interface CustomTheme {
+  id: string;
+  name: string;
+  isBuiltIn?: boolean;
+  tokens: ThemeTokens;
+}
+
 export interface UserSettings {
-  theme: 'light' | 'dark' | 'amoled' | 'system';
+  theme: 'light' | 'dark' | 'amoled' | 'system' | string; // supports custom theme IDs
   accentColor: string;
   startOfWeek: 0 | 1; // 0 = Sunday, 1 = Monday
   dateFormat: string;
@@ -129,6 +155,8 @@ export interface UserSettings {
   defaultPriorityId: string;
   notificationsEnabled: boolean;
   overviewLayout?: OverviewWidgetConfig[];
+  customThemes?: CustomTheme[];
+  activeCustomThemeId?: string | null;
 }
 
 export interface TaskFilterOptions {

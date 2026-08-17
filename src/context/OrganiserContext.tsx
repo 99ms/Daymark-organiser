@@ -13,6 +13,7 @@ import type {
   ToastMessage,
 } from '../types';
 import {
+  getDB,
   initializeDatabaseWithSeedData,
   saveTaskToDB,
   deleteTaskFromDB,
@@ -29,8 +30,13 @@ import {
   saveTemplateToDB,
   saveSettingsToDB,
   clearAllDataFromDB,
+  createSafetySnapshot,
+  getSafetySnapshots,
+  restoreSafetySnapshot,
 } from '../services/db';
+import type { SafetySnapshot } from '../services/db';
 import { getNextRecurrenceDate, parseNaturalLanguageTask } from '../utils/taskUtils';
+import { applyThemeTokens, clearCustomThemeTokens } from '../utils/themeUtils';
 import { format } from 'date-fns';
 
 interface OrganiserContextType {
@@ -98,6 +104,9 @@ interface OrganiserContextType {
   importDataJSON: (jsonStr: string) => Promise<boolean>;
   resetAllData: () => Promise<void>;
   dismissOnboarding: () => Promise<void>;
+  createSnapshot: (trigger?: 'manual' | 'before_import' | 'before_reset' | 'migration') => Promise<SafetySnapshot | null>;
+  fetchSnapshots: () => Promise<SafetySnapshot[]>;
+  restoreSnapshot: (id: string) => Promise<boolean>;
 }
 
 const OrganiserContext = createContext<OrganiserContextType | undefined>(undefined);
@@ -157,17 +166,29 @@ export const OrganiserProvider: React.FC<{ children: ReactNode }> = ({ children 
     const root = document.documentElement;
     root.classList.remove('light', 'dark', 'amoled');
 
-    if (settings.theme === 'amoled') {
-      root.classList.add('amoled');
-    } else if (settings.theme === 'dark') {
-      root.classList.add('dark');
-    } else if (settings.theme === 'light') {
-      root.classList.add('light');
+    // Check if custom theme is selected or active
+    const customThemes = settings.customThemes || [];
+    const activeCustomTheme = customThemes.find(
+      (ct) => ct.id === settings.theme || ct.id === settings.activeCustomThemeId
+    );
+
+    if (activeCustomTheme) {
+      root.classList.add('dark'); // base class
+      applyThemeTokens(activeCustomTheme.tokens);
     } else {
-      const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-      root.classList.add(prefersDark ? 'dark' : 'light');
+      clearCustomThemeTokens();
+      if (settings.theme === 'amoled') {
+        root.classList.add('amoled');
+      } else if (settings.theme === 'dark') {
+        root.classList.add('dark');
+      } else if (settings.theme === 'light') {
+        root.classList.add('light');
+      } else {
+        const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+        root.classList.add(prefersDark ? 'dark' : 'light');
+      }
     }
-  }, [settings.theme]);
+  }, [settings.theme, settings.customThemes, settings.activeCustomThemeId]);
 
   const addToast = (message: string, type: ToastMessage['type'] = 'info', undoAction?: () => void) => {
     const id = Date.now().toString() + Math.random().toString(36).substring(2, 5);
@@ -551,9 +572,56 @@ export const OrganiserProvider: React.FC<{ children: ReactNode }> = ({ children 
     return JSON.stringify(exportObject, null, 2);
   };
 
-  const importDataJSON = async (jsonStr: string): Promise<boolean> => {
+  const createSnapshot = async (trigger: 'manual' | 'before_import' | 'before_reset' | 'migration' = 'manual'): Promise<SafetySnapshot | null> => {
     try {
-      const parsed = JSON.parse(jsonStr);
+      const snapshot = await createSafetySnapshot(trigger);
+      if (trigger === 'manual') {
+        addToast('Safety snapshot created', 'success');
+      }
+      return snapshot;
+    } catch (e) {
+      console.error('Failed to create safety snapshot:', e);
+      addToast('Failed to create safety snapshot', 'error');
+      return null;
+    }
+  };
+
+  const fetchSnapshots = async (): Promise<SafetySnapshot[]> => {
+    try {
+      return await getSafetySnapshots();
+    } catch (e) {
+      console.error('Failed to fetch safety snapshots:', e);
+      return [];
+    }
+  };
+
+  const restoreSnapshot = async (snapshotId: string): Promise<boolean> => {
+    try {
+      // Create a safety snapshot of current state before restoring an older snapshot
+      await createSnapshot('manual');
+      const data = await restoreSafetySnapshot(snapshotId);
+      setTasks(data.tasks || []);
+      setPriorities(data.priorities || []);
+      setCategories(data.categories || []);
+      setProjects(data.projects || []);
+      setGoals(data.goals || []);
+      setNotes(data.notes || []);
+      setTemplates(data.templates || []);
+      if (data.settings) setSettings(data.settings);
+      addToast('Workspace restored from safety snapshot', 'success');
+      return true;
+    } catch (e) {
+      console.error('Failed to restore snapshot:', e);
+      addToast('Failed to restore safety snapshot', 'error');
+      return false;
+    }
+  };
+
+  const importDataJSON = async (jsonStr: string): Promise<boolean> => {
+    // 1. Validate payload first before touching existing database or making snapshots
+    let parsed: any;
+    try {
+      parsed = JSON.parse(jsonStr);
       if (!parsed || typeof parsed !== 'object') {
         addToast('Invalid JSON payload structure', 'error');
         return false;
@@ -562,38 +630,91 @@ export const OrganiserProvider: React.FC<{ children: ReactNode }> = ({ children 
         addToast('JSON import missing "tasks" array', 'error');
         return false;
       }
+    } catch (e) {
+      console.error(e);
+      addToast('Malformed JSON file format', 'error');
+      return false;
+    }
 
+    // 2. Create safety snapshot of current data BEFORE performing import
+    const snapshot = await createSnapshot('before_import');
+    if (!snapshot) {
+      addToast('Import cancelled: Safety snapshot could not be created', 'error');
+      return false;
+    }
+
+    // 3. Clear and import data safely
+    try {
       await clearAllDataFromDB();
-      const data = await initializeDatabaseWithSeedData();
-      setTasks(parsed.tasks || data.tasks);
-      setPriorities(Array.isArray(parsed.priorities) && parsed.priorities.length ? parsed.priorities : data.priorities);
-      setCategories(Array.isArray(parsed.categories) && parsed.categories.length ? parsed.categories : data.categories);
-      setProjects(Array.isArray(parsed.projects) ? parsed.projects : data.projects);
-      setGoals(Array.isArray(parsed.goals) ? parsed.goals : data.goals);
-      setNotes(Array.isArray(parsed.notes) ? parsed.notes : data.notes);
-      setTemplates(Array.isArray(parsed.templates) ? parsed.templates : data.templates);
-      if (parsed.settings && typeof parsed.settings === 'object') setSettings(parsed.settings);
+      const seedData = await initializeDatabaseWithSeedData();
+      
+      const newTasks = parsed.tasks || seedData.tasks;
+      const newPriorities = Array.isArray(parsed.priorities) && parsed.priorities.length ? parsed.priorities : seedData.priorities;
+      const newCategories = Array.isArray(parsed.categories) && parsed.categories.length ? parsed.categories : seedData.categories;
+      const newProjects = Array.isArray(parsed.projects) ? parsed.projects : seedData.projects;
+      const newGoals = Array.isArray(parsed.goals) ? parsed.goals : seedData.goals;
+      const newNotes = Array.isArray(parsed.notes) ? parsed.notes : seedData.notes;
+      const newTemplates = Array.isArray(parsed.templates) ? parsed.templates : seedData.templates;
+      const newSettings = parsed.settings && typeof parsed.settings === 'object' ? parsed.settings : seedData.settings;
+
+      // Save to IndexedDB
+      const db = await getDB();
+      const tx = db.transaction(['tasks', 'priorities', 'categories', 'projects', 'goals', 'notes', 'templates', 'settings'], 'readwrite');
+      for (const t of newTasks) await tx.objectStore('tasks').put(t);
+      for (const p of newPriorities) await tx.objectStore('priorities').put(p);
+      for (const c of newCategories) await tx.objectStore('categories').put(c);
+      for (const pr of newProjects) await tx.objectStore('projects').put(pr);
+      for (const g of newGoals) await tx.objectStore('goals').put(g);
+      for (const n of newNotes) await tx.objectStore('notes').put(n);
+      for (const tm of newTemplates) await tx.objectStore('templates').put(tm);
+      if (newSettings) await tx.objectStore('settings').put({ ...newSettings, id: 'user_settings' });
+      await tx.done;
+
+      setTasks(newTasks);
+      setPriorities(newPriorities);
+      setCategories(newCategories);
+      setProjects(newProjects);
+      setGoals(newGoals);
+      setNotes(newNotes);
+      setTemplates(newTemplates);
+      if (newSettings) setSettings(newSettings);
+
       addToast('Data imported successfully!', 'success');
       return true;
     } catch (e) {
-      console.error(e);
-      addToast('Malformed JSON file', 'error');
+      console.error('Import failed, attempting rollback:', e);
+      addToast('Import failed. Rolling back using safety snapshot...', 'error');
+      await restoreSnapshot(snapshot.id);
       return false;
     }
   };
 
   const resetAllData = async () => {
-    await clearAllDataFromDB();
-    const data = await initializeDatabaseWithSeedData();
-    setTasks(data.tasks);
-    setPriorities(data.priorities);
-    setCategories(data.categories);
-    setProjects(data.projects);
-    setGoals(data.goals);
-    setNotes(data.notes);
-    setTemplates(data.templates);
-    setSettings(data.settings);
-    addToast('Database reset to defaults', 'info');
+    // 1. Create safety snapshot BEFORE clear/reset operation
+    const snapshot = await createSnapshot('before_reset');
+    if (!snapshot) {
+      addToast('Reset cancelled: Safety snapshot could not be created', 'error');
+      return;
+    }
+
+    // 2. Perform clear & re-seed
+    try {
+      await clearAllDataFromDB();
+      const data = await initializeDatabaseWithSeedData();
+      setTasks(data.tasks);
+      setPriorities(data.priorities);
+      setCategories(data.categories);
+      setProjects(data.projects);
+      setGoals(data.goals);
+      setNotes(data.notes);
+      setTemplates(data.templates);
+      setSettings(data.settings);
+      addToast('Database reset to defaults. Safety snapshot preserved.', 'info');
+    } catch (e) {
+      console.error('Reset failed:', e);
+      addToast('Reset failed. Restoring safety snapshot...', 'error');
+      await restoreSnapshot(snapshot.id);
+    }
   };
 
   const dismissOnboarding = async () => {
@@ -694,6 +815,9 @@ export const OrganiserProvider: React.FC<{ children: ReactNode }> = ({ children 
         importDataJSON,
         resetAllData,
         dismissOnboarding,
+        createSnapshot,
+        fetchSnapshots,
+        restoreSnapshot,
       }}
     >
       {children}

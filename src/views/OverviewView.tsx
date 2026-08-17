@@ -38,6 +38,7 @@ import {
   FileText,
   Inbox,
   Clock,
+  Timer,
   ChevronLeft,
   ChevronRight,
 } from 'lucide-react';
@@ -967,7 +968,7 @@ export const OverviewView: React.FC<OverviewViewProps> = ({ onEditTask }) => {
             <div>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                  <Clock size={20} style={{ color: '#f59e0b' }} />
+                  <Timer size={20} style={{ color: '#f59e0b' }} />
                   <span style={{ fontSize: 'var(--font-lg)', fontWeight: 700, color: 'var(--text-primary)' }}>Focus Session</span>
                 </div>
                 <span style={{ fontSize: 'var(--font-xs)', fontWeight: 700, color: '#f59e0b', backgroundColor: '#f59e0b22', padding: '0.2rem 0.5rem', borderRadius: 'var(--radius-full)' }}>
