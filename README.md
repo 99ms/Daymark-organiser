@@ -2,7 +2,7 @@
 
 A minimal, local-first personal productivity organiser for planning your days, weeks, and months.
 
-Daymark helps you plan, track, and accomplish your work without cognitive overload, complex cloud setups, or subscription lock-in.
+Daymark helps you plan, track, and accomplish your work without cognitive overload, complex cloud setups, user registration, or subscription lock-in.
 
 🚀 **Live Demo**: [https://99ms.github.io/Daymark-organiser/](https://99ms.github.io/Daymark-organiser/)
 
@@ -10,50 +10,74 @@ Daymark helps you plan, track, and accomplish your work without cognitive overlo
 
 ## 📌 Overview
 
-Daymark Organiser is designed to manage:
-- **Tasks**: Create, prioritize, categorize, tag, and schedule tasks.
-- **Priorities**: Color-coded levels (Low, Medium, High, Critical) for visual hierarchy.
+Daymark Organiser is designed around frictionless personal productivity:
+- **Tasks**: Create, prioritize, categorize, tag, and schedule tasks with natural-language parsing.
+- **Priorities**: Color-coded levels (Low, Medium, High, Critical) for clear visual hierarchy.
 - **Planning Views**: Flexible time horizons across Day, Week, Month, and Upcoming schedules.
-- **Projects**: Group related tasks together with live completion progress.
-- **Goals**: Set and track daily, weekly, and monthly targets.
+- **Projects**: Group related tasks with visual completion metrics.
+- **Goals**: Set and manually track daily, weekly, and monthly targets.
 - **Notes**: Maintain standalone or project-linked markdown notes.
 - **Recurring Tasks**: Schedule repeating instances without completing future occurrences.
 - **Focus Mode**: Distraction-free execution space with an integrated Pomodoro timer.
+- **Customizable Overview**: Personalize your main dashboard with true drag-and-drop widgets.
+- **Custom Themes**: Select built-in presets or create your own custom color themes with live preview.
+- **Local Safety Snapshots**: Automatic rolling safety backups before database resets or imports.
 
-**Local-First Privacy**: All your data is persisted locally in your browser using **IndexedDB**. Daymark requires no external database or user registration to operate.
+**Local-First Privacy**: All your workspace data is persisted locally in your browser using **IndexedDB**. Daymark requires no user registration or external server setups.
 
 ---
 
-## ✨ Features
+## ✨ Key Features
+
+### 📊 Customizable Overview Dashboard
+- **Default Experience**: Clean 12-column desktop command center with completion progress, streak tracking, workload indicator, top priorities, and upcoming schedule.
+- **True Drag-and-Drop**: Reorder widgets freely across the grid with real-time IndexedDB layout persistence.
+- **Widget Customization**: Resize widgets (1/4, 1/2, 3/4, Full width), hide unused widgets, or restore default layouts anytime.
+- **Expanded Widget Library**: Choose from 9 optional widgets:
+  - *Quick Capture*, *Mini Calendar*, *Focus Session*, *Goal Progress*, *Task Breakdown*, *Productivity Trend*, *Recent Notes*, *Time Budget*, and *Inbox*.
 
 ### 📅 Multi-Horizon Planning
-- **Dashboard / Overview**: Full 12-column desktop command center with live completion metrics, streak tracking, workload indicator, top priorities, and upcoming schedule.
 - **Day View**: Hour-by-hour time blocking and daily reflection space.
 - **Week View**: 7-day column grid with drag-and-drop task rescheduling.
 - **Month View**: Comprehensive monthly calendar overview.
-- **Upcoming View**: Sorted schedule for future tasks and upcoming deadlines.
+- **Upcoming View**: Chronological schedule for future tasks and upcoming deadlines.
 
 ### 📝 Comprehensive Task Management
-- **Progressive Disclosure**: Task cards expand to reveal subtasks, notes, tags, category badges, and project links.
-- **Natural Language Parsing**: Quick Add parses inputs like `Review notes tomorrow at 6pm high priority`.
+- **Progressive Disclosure**: Expand task cards to view subtasks, notes, tags, category badges, and project links.
+- **Natural Language Parsing**: Quick Add parses inputs like `Review notes tomorrow at 6pm high priority` (`N` hotkey).
 - **Top Priorities**: Pin critical daily deliverables to the top of your workspace.
-- **Rescheduling & Undo**: Instantly move tasks between days with one-click toast undo actions.
 - **Recurrence Engine**: Flexible rules (daily, weekdays, weekly, monthly, custom). Completing one occurrence schedules the next without completing future instances.
 
 ### 🎯 Projects, Goals & Notes
-- **Projects**: Group related tasks with visual progress tracking.
-- **Goals**: Target tracking for daily habits, weekly output, and monthly milestones.
-- **Notes**: Rich text notes linkable directly to tasks or projects.
+- **Projects**: Group related tasks with live completion progress.
+- **Goals**: Independent target tracking for daily habits, weekly output, and monthly milestones.
+- **Notes**: Standalone or project-linked markdown notes.
 
-### ⏱️ Focus Mode & Productivity Tools
-- Integrated **Pomodoro timer** with customizable work and break intervals.
+### ⏱️ Focus Mode & Pomodoro Timer
+- Integrated Pomodoro timer (`Timer` icon) with customizable work and break intervals.
 - Distraction-free full-screen workspace.
 
-### 🔍 Search & Filtering
-- **Global Search (`Ctrl + K`)**: Instant search across tasks, categories, and notes.
-- Filter by category, project, or tag.
+### 🎨 Themes & Customization
+- **Built-in Presets**:
+  - **Light Mode**: Clean daylight interface.
+  - **Dark Mode**: Slate dark interface.
+  - **AMOLED**: True-black (`#000000`) OLED theme for maximum contrast and battery saving.
+- **Top-Right Theme Cycler**: Instantly cycle between Light → Dark → AMOLED presets.
+- **Theme Creator & Editor**: Create, edit, rename, duplicate, and delete custom themes under **Settings → Appearance & Custom Themes**. Includes live DOM preview and WCAG contrast warning indicators.
 
-### ⌨️ Keyboard Shortcuts
+### 🔐 Local-First & Data Resilience
+- **IndexedDB Persistence**: All workspace data remains on your device.
+- **Automatic Safety Snapshots**: Rolling 5-snapshot safety net automatically created before database resets or backup imports.
+- **JSON Export & Import**: Export your complete workspace state (including custom themes and overview layout) for off-device protection.
+
+### 📱 Responsive Design & Accessibility
+- **Fluid Layouts**: Full responsive support across desktop (1920px+), tablet (1024px, 768px), and mobile (430px, 390px, 360px) with off-canvas drawer navigation.
+- **Accessibility**: Explicit `aria-label` attributes on icon controls, accessible contrast warnings, keyboard navigation, and visible focus indicators.
+
+---
+
+## ⌨️ Keyboard Shortcuts
+
 - `N`: Quick add task
 - `T`: Jump to Today
 - `D`: Day view
@@ -63,19 +87,6 @@ Daymark Organiser is designed to manage:
 - `F`: Focus mode
 - `Ctrl / Cmd + K`: Open search
 - `Esc`: Close open modal
-
-### 🎨 Themes & Customization
-- Seamless **Light Mode** and **Dark Mode** support tailored with accessible HSL color palettes.
-
-### 💾 Data & Privacy
-- **IndexedDB Storage**: Local-first architecture ensures 100% data privacy and offline capability.
-- **JSON Export & Import**: Export your complete state anytime for external backups or restore on new devices.
-
----
-
-## 🎨 Preview
-
-> *Visual screenshots will be published here as the UI continues to refine during the Beta phase.*
 
 ---
 
@@ -87,7 +98,7 @@ Daymark Organiser is designed to manage:
 - **Date Utilities**: `date-fns` (`^4.4.0`)
 - **Iconography**: `lucide-react` (`^1.31.0`)
 - **Local Database**: `idb` (`^8.0.3` IndexedDB wrapper)
-- **Styling**: Vanilla CSS with custom HSL variables
+- **Styling**: Vanilla CSS with custom HSL design tokens
 
 ---
 
@@ -95,12 +106,12 @@ Daymark Organiser is designed to manage:
 
 ```text
 src/
-├── components/     # Reusable presentation components (Header, Sidebar, TaskItem, TaskEditorModal)
-├── context/        # OrganiserContext providing state management & IndexedDB persistence
+├── components/     # Presentation components (Header, Sidebar, TaskItem, TaskEditorModal)
+├── context/        # OrganiserContext providing state management, snapshots & persistence
 ├── services/       # IndexedDB interface (db.ts) & seed data definitions (sampleData.ts)
-├── types/          # TypeScript domain models (Task, Priority, Category, Project, Goal, Note)
-├── utils/          # Task scheduling, date math, and natural-language parsing utilities
-├── views/          # Primary page views (Overview, Day, Week, Month, Focus, Projects, Goals, Notes)
+├── types/          # TypeScript domain models (Task, Priority, Category, Project, Goal, Note, ThemeTokens)
+├── utils/          # Task scheduling, date math, theme tokens, and natural-language parsing utilities
+├── views/          # Primary page views (Overview, Day, Week, Month, Focus, Projects, Goals, Notes, Settings)
 ├── App.tsx         # Main layout wrapper & modal router
 ├── index.css       # Global design tokens, typography scale, and responsive grid rules
 └── main.tsx        # Application entrypoint
@@ -147,23 +158,15 @@ npm run preview
 
 ---
 
-## 🌐 Browser Requirements
-
-Daymark Organiser runs in any modern web browser supporting ES2020+ and IndexedDB:
-- Google Chrome / Chromium (recommended)
-- Mozilla Firefox
-- Apple Safari
-- Microsoft Edge
-
----
-
 ## 🔐 Data, Privacy & Backups
 
 Daymark stores all user data **locally in your browser** via IndexedDB. No personal data, tasks, or notes are transmitted to any remote servers.
 
-- **Creating a Backup**: Open Settings → click **Export Data (JSON)** to download your complete workspace backup.
-- **Restoring Data**: Open Settings → click **Import Data (JSON)** to restore from a backup file. Validated prior to database update.
-- **Data Reset**: Open Settings → click **Reset Database** to restore default settings.
+- **No User Account Required**: Use Daymark immediately without creating an account or logging in.
+- **Local Safety Snapshots**: Snapshots are created automatically before dangerous actions (resets or imports) and can be restored with one click in Settings.
+- **Exporting Backups**: Open **Settings → Data Resilience** and click **Export Backup (JSON)** to save your workspace file off-device.
+- **Restoring Backups**: Click **Import Backup JSON** to restore your tasks, projects, goals, notes, custom themes, and overview layout.
+- **Data Protection Warning**: Clearing browser site data or clearing local storage will wipe locally stored data. Users should periodically export JSON backups for long-term protection.
 
 ---
 
@@ -173,35 +176,7 @@ Daymark Organiser is currently in **v0.2.0-beta.1**. Features and UI may continu
 
 ---
 
-## 🗺️ Roadmap
-
-- [ ] Enhanced mobile navigation & gesture support
-- [ ] Subtask drag-and-drop reordering
-- [ ] Export schedule to iCal / .ics format
-- [ ] Advanced productivity analytics & velocity charts
-- [ ] Custom color theme builder
-
----
-
-## 🤝 Contributing
-
-Contributions are welcome! Please follow these steps:
-1. Fork the repository.
-2. Create a feature branch (`git checkout -b feature/amazing-feature`).
-3. Make your changes and verify with `npm run build`.
-4. Ensure design consistency and readability.
-5. Open a Pull Request.
-
----
-
-## 🐛 Bug Reports & Feedback
-
-If you encounter a bug or have a feature request:
-- Open an issue on [GitHub Issues](https://github.com/99ms/Daymark-organiser/issues).
-- Please include your browser name, operating system, steps to reproduce, and console errors if applicable.
-
----
-
 ## 📄 License
 
 Daymark Organiser is licensed under the **MIT License**. See the [LICENSE](LICENSE) file for details.
+
