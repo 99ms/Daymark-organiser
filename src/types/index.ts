@@ -157,6 +157,7 @@ export interface UserSettings {
   overviewLayout?: OverviewWidgetConfig[];
   customThemes?: CustomTheme[];
   activeCustomThemeId?: string | null;
+  showHeatmapInStats?: boolean;
 }
 
 export interface TaskFilterOptions {

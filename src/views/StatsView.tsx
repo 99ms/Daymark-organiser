@@ -1,9 +1,17 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useOrganiser } from '../context/OrganiserContext';
-import { BarChart3 } from 'lucide-react';
+import { ProductivityHeatmap } from '../components/ProductivityHeatmap';
+import { BarChart3, Eye } from 'lucide-react';
 
 export const StatsView: React.FC = () => {
-  const { tasks, priorities, categories } = useOrganiser();
+  const { tasks, priorities, categories, settings, updateSettings } = useOrganiser();
+  const [heatmapVisible, setHeatmapVisible] = useState<boolean>(settings.showHeatmapInStats !== false);
+
+  const handleToggleHeatmap = () => {
+    const next = !heatmapVisible;
+    setHeatmapVisible(next);
+    updateSettings({ showHeatmapInStats: next });
+  };
 
   const totalTasks = tasks.length;
   const completedTasks = tasks.filter((t) => t.completed);
@@ -15,6 +23,8 @@ export const StatsView: React.FC = () => {
         style={{
           display: 'flex',
           alignItems: 'center',
+          justifyContent: 'space-between',
+          flexWrap: 'wrap',
           gap: '0.75rem',
           backgroundColor: 'var(--bg-card)',
           padding: '1.25rem 1.5rem',
@@ -22,14 +32,32 @@ export const StatsView: React.FC = () => {
           border: '1px solid var(--border-color)',
         }}
       >
-        <BarChart3 size={24} style={{ color: 'var(--accent-primary)' }} />
-        <div>
-          <h2 style={{ fontSize: '1.3rem', fontWeight: 700 }}>Productivity Analytics</h2>
-          <p style={{ fontSize: '0.88rem', color: 'var(--text-secondary)' }}>
-            Insights into task velocity, priorities, and category distribution.
-          </p>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+          <BarChart3 size={24} style={{ color: 'var(--accent-primary)' }} />
+          <div>
+            <h2 style={{ fontSize: '1.3rem', fontWeight: 700 }}>Productivity Analytics</h2>
+            <p style={{ fontSize: '0.88rem', color: 'var(--text-secondary)' }}>
+              Insights into task velocity, priorities, and category distribution.
+            </p>
+          </div>
         </div>
+
+        {!heatmapVisible && (
+          <button
+            onClick={handleToggleHeatmap}
+            className="btn btn-secondary"
+            style={{ fontSize: 'var(--font-xs)', gap: '0.4rem' }}
+          >
+            <Eye size={16} /> Show Activity Heatmap
+          </button>
+        )}
       </div>
+
+      <ProductivityHeatmap
+        visible={heatmapVisible}
+        showToggle={true}
+        onToggleVisibility={handleToggleHeatmap}
+      />
 
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '1rem' }}>
         <div style={{ backgroundColor: 'var(--bg-card)', padding: '1.2rem', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-color)' }}>
