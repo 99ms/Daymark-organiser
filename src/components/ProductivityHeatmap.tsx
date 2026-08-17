@@ -155,84 +155,87 @@ export const ProductivityHeatmap: React.FC<ProductivityHeatmapProps> = ({
         </div>
       </div>
 
-      {/* Heatmap Grid Bounded Container */}
-      <div style={{ overflowX: 'auto', paddingBottom: '0.5rem' }}>
-        <div style={{ minWidth: '720px', display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
-          {/* Month Labels Row */}
-          <div style={{ display: 'flex', paddingLeft: '32px', position: 'relative', height: '16px' }}>
-            {monthLabels.map((lbl, idx) => (
-              <span
-                key={idx}
-                style={{
-                  position: 'absolute',
-                  left: `${32 + lbl.colIndex * 13.5}px`,
-                  fontSize: '10px',
-                  fontWeight: 600,
-                  color: 'var(--text-muted)',
-                }}
-              >
-                {lbl.name}
-              </span>
-            ))}
-          </div>
-
-          {/* Grid Content: Day Labels + Week Columns */}
-          <div style={{ display: 'flex', gap: '4px' }}>
-            {/* Day of Week Labels (Sun, Tue, Thu, Sat) */}
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '3px', width: '28px', paddingTop: '1px' }}>
-              <span style={{ fontSize: '9px', height: '10px', lineHeight: '10px', color: 'var(--text-muted)' }}>Sun</span>
-              <span style={{ fontSize: '9px', height: '10px', lineHeight: '10px', color: 'var(--text-muted)' }} />
-              <span style={{ fontSize: '9px', height: '10px', lineHeight: '10px', color: 'var(--text-muted)' }}>Tue</span>
-              <span style={{ fontSize: '9px', height: '10px', lineHeight: '10px', color: 'var(--text-muted)' }} />
-              <span style={{ fontSize: '9px', height: '10px', lineHeight: '10px', color: 'var(--text-muted)' }}>Thu</span>
-              <span style={{ fontSize: '9px', height: '10px', lineHeight: '10px', color: 'var(--text-muted)' }} />
-              <span style={{ fontSize: '9px', height: '10px', lineHeight: '10px', color: 'var(--text-muted)' }}>Sat</span>
-            </div>
-
-            {/* 52 Columns */}
-            <div style={{ display: 'flex', gap: '3.5px', flex: 1 }}>
-              {weeksData.map((week, wIdx) => (
-                <div key={wIdx} style={{ display: 'flex', flexDirection: 'column', gap: '3.5px' }}>
-                  {week.map((cell) => {
-                    const level = getLevel(cell.count);
-                    const isToday = isSameDay(cell.date, new Date());
-                    const tooltipText = `${format(cell.date, 'MMMM d, yyyy')} — ${cell.count} task${cell.count === 1 ? '' : 's'} completed`;
-
-                    return (
-                      <div
-                        key={cell.dateStr}
-                        tabIndex={0}
-                        title={tooltipText}
-                        aria-label={tooltipText}
-                        style={{
-                          width: '10px',
-                          height: '10px',
-                          borderRadius: '2px',
-                          backgroundColor: getCellBg(level),
-                          border: isToday ? '1px solid var(--text-primary)' : 'none',
-                          cursor: 'pointer',
-                          outline: 'none',
-                          transition: 'transform 0.1s ease',
-                        }}
-                      />
-                    );
-                  })}
-                </div>
+      {/* Centered Compact Heatmap Wrapper Container */}
+      <div style={{ display: 'flex', justifyContent: 'center', width: '100%' }}>
+        <div style={{ overflowX: 'auto', maxWidth: '100%', paddingBottom: '0.5rem' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.6rem', width: 'max-content', margin: '0 auto' }}>
+            {/* Month Labels Row */}
+            <div style={{ display: 'flex', paddingLeft: '45px', position: 'relative', height: '22px' }}>
+              {monthLabels.map((lbl, idx) => (
+                <span
+                  key={idx}
+                  style={{
+                    position: 'absolute',
+                    left: `${45 + lbl.colIndex * 27.5}px`,
+                    fontSize: '12px',
+                    fontWeight: 600,
+                    color: 'var(--text-muted)',
+                  }}
+                >
+                  {lbl.name}
+                </span>
               ))}
             </div>
-          </div>
 
-          {/* Footer Legend */}
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '0.4rem', fontSize: '10px', color: 'var(--text-muted)' }}>
-            <span>{totalCompletionsInYear === 0 ? 'No task completion activity recorded yet.' : 'Hover or focus cell for details.'}</span>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-              <span>Less</span>
-              <div style={{ width: 10, height: 10, borderRadius: 2, backgroundColor: getCellBg(0) }} />
-              <div style={{ width: 10, height: 10, borderRadius: 2, backgroundColor: getCellBg(1) }} />
-              <div style={{ width: 10, height: 10, borderRadius: 2, backgroundColor: getCellBg(2) }} />
-              <div style={{ width: 10, height: 10, borderRadius: 2, backgroundColor: getCellBg(3) }} />
-              <div style={{ width: 10, height: 10, borderRadius: 2, backgroundColor: getCellBg(4) }} />
-              <span>More</span>
+            {/* Grid Content: Day Labels + Week Columns */}
+            <div style={{ display: 'flex', gap: '10px' }}>
+              {/* Day of Week Labels (Sun, Tue, Thu, Sat) */}
+              <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'space-between', width: '35px', height: '185px', paddingTop: '1px' }}>
+                <span style={{ fontSize: '11px', lineHeight: '20px', color: 'var(--text-muted)' }}>Sun</span>
+                <span style={{ fontSize: '11px', lineHeight: '20px', color: 'var(--text-muted)' }} />
+                <span style={{ fontSize: '11px', lineHeight: '20px', color: 'var(--text-muted)' }}>Tue</span>
+                <span style={{ fontSize: '11px', lineHeight: '20px', color: 'var(--text-muted)' }} />
+                <span style={{ fontSize: '11px', lineHeight: '20px', color: 'var(--text-muted)' }}>Thu</span>
+                <span style={{ fontSize: '11px', lineHeight: '20px', color: 'var(--text-muted)' }} />
+                <span style={{ fontSize: '11px', lineHeight: '20px', color: 'var(--text-muted)' }}>Sat</span>
+              </div>
+
+              {/* 52 Columns */}
+              <div style={{ display: 'flex', gap: '7.5px' }}>
+                {weeksData.map((week, wIdx) => (
+                  <div key={wIdx} style={{ display: 'flex', flexDirection: 'column', gap: '7.5px' }}>
+                    {week.map((cell) => {
+                      const level = getLevel(cell.count);
+                      const isToday = isSameDay(cell.date, new Date());
+                      const tooltipText = `${format(cell.date, 'MMMM d, yyyy')} — ${cell.count} task${cell.count === 1 ? '' : 's'} completed`;
+
+                      return (
+                        <div
+                          key={cell.dateStr}
+                          tabIndex={0}
+                          title={tooltipText}
+                          aria-label={tooltipText}
+                          style={{
+                            width: '20px',
+                            height: '20px',
+                            borderRadius: '4px',
+                            backgroundColor: getCellBg(level),
+                            border: isToday ? '2px solid var(--text-primary)' : 'none',
+                            cursor: 'pointer',
+                            outline: 'none',
+                            transition: 'transform 0.1s ease',
+                          }}
+                        />
+                      );
+                    })}
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Footer Bar with Left-Aligned Legend aligned to Heatmap Content */}
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem', marginTop: '0.6rem', paddingLeft: '45px', fontSize: '12px', color: 'var(--text-muted)' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <span style={{ fontWeight: 600 }}>Less</span>
+                <div style={{ width: 16, height: 16, borderRadius: 3, backgroundColor: getCellBg(0) }} />
+                <div style={{ width: 16, height: 16, borderRadius: 3, backgroundColor: getCellBg(1) }} />
+                <div style={{ width: 16, height: 16, borderRadius: 3, backgroundColor: getCellBg(2) }} />
+                <div style={{ width: 16, height: 16, borderRadius: 3, backgroundColor: getCellBg(3) }} />
+                <div style={{ width: 16, height: 16, borderRadius: 3, backgroundColor: getCellBg(4) }} />
+                <span style={{ fontWeight: 600 }}>More</span>
+              </div>
+
+              <span>{totalCompletionsInYear === 0 ? 'No task completion activity recorded yet.' : 'Hover or focus cell for details.'}</span>
             </div>
           </div>
         </div>

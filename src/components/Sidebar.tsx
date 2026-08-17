@@ -5,6 +5,7 @@ import {
   LayoutDashboard,
   Sun,
   CalendarDays,
+  Columns3,
   Calendar,
   Inbox,
   FolderKanban,
@@ -41,7 +42,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ onOpenNewTaskModal }) => {
     { view: 'today', label: 'Today', icon: <Sun size={18} />, badge: todayTasksCount },
     { view: 'upcoming', label: 'Upcoming', icon: <Clock size={18} /> },
     { view: 'day', label: 'Day View', icon: <CalendarDays size={18} /> },
-    { view: 'week', label: 'Week View', icon: <CalendarDays size={18} /> },
+    { view: 'week', label: 'Week View', icon: <Columns3 size={18} /> },
     { view: 'month', label: 'Month View', icon: <Calendar size={18} /> },
     { view: 'inbox', label: 'Inbox', icon: <Inbox size={18} />, badge: inboxCount },
     { view: 'projects', label: 'Projects', icon: <FolderKanban size={18} /> },
@@ -93,17 +94,18 @@ export const Sidebar: React.FC<SidebarProps> = ({ onOpenNewTaskModal }) => {
           </button>
         </div>
 
-        <div style={{ padding: '0.85rem' }}>
+        <div style={{ padding: collapsed ? '0.85rem 0.5rem' : '0.85rem' }}>
           <button
             onClick={() => {
               onOpenNewTaskModal();
               if (window.innerWidth <= 768) setCollapsed(true);
             }}
             className="btn btn-primary"
-            style={{ width: '100%', justifyContent: collapsed ? 'center' : 'flex-start' }}
+            style={{ width: '100%', padding: collapsed ? '0.55rem 0' : '0.55rem 1.1rem', justifyContent: 'center' }}
             title="New Task (N)"
+            aria-label="New Task"
           >
-            <Plus size={18} />
+            <Plus size={18} style={{ flexShrink: 0 }} />
             {!collapsed && <span>New Task</span>}
           </button>
         </div>
