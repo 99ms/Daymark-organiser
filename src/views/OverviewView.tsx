@@ -2,7 +2,17 @@ import React, { useState } from 'react';
 import { useOrganiser } from '../context/OrganiserContext';
 import type { Task, OverviewWidgetConfig } from '../types';
 import { TaskItem } from '../components/TaskItem';
-import { format } from 'date-fns';
+import {
+  format,
+  parseISO,
+  subDays,
+  startOfWeek,
+  addDays,
+  subMonths,
+  addMonths,
+  isSameDay,
+  isSameMonth,
+} from 'date-fns';
 import {
   Calendar,
   Flame,
@@ -23,13 +33,21 @@ import {
   EyeOff,
   GripVertical,
   Check,
+  Plus,
+  Play,
+  FileText,
+  Inbox,
+  Clock,
+  ChevronLeft,
+  ChevronRight,
 } from 'lucide-react';
 
 interface OverviewViewProps {
   onEditTask: (task: Task) => void;
 }
 
-const DEFAULT_OVERVIEW_LAYOUT: OverviewWidgetConfig[] = [
+const ALL_OVERVIEW_WIDGETS: OverviewWidgetConfig[] = [
+  // 11 Core Default Widgets (visible: true)
   { id: 'today-progress', visible: true, colSpan: 3, order: 1 },
   { id: 'streak-stats', visible: true, colSpan: 3, order: 2 },
   { id: 'daily-workload', visible: true, colSpan: 3, order: 3 },
@@ -41,7 +59,20 @@ const DEFAULT_OVERVIEW_LAYOUT: OverviewWidgetConfig[] = [
   { id: 'personal-goals', visible: true, colSpan: 3, order: 9 },
   { id: 'recent-activity', visible: true, colSpan: 3, order: 10 },
   { id: 'quick-actions', visible: true, colSpan: 3, order: 11 },
+
+  // 9 New Optional Phase 3 Widgets (visible: false by default)
+  { id: 'quick-capture', visible: false, colSpan: 6, order: 12 },
+  { id: 'mini-calendar', visible: false, colSpan: 3, order: 13 },
+  { id: 'focus-session', visible: false, colSpan: 3, order: 14 },
+  { id: 'goal-progress-widget', visible: false, colSpan: 3, order: 15 },
+  { id: 'task-breakdown', visible: false, colSpan: 3, order: 16 },
+  { id: 'productivity-trend', visible: false, colSpan: 6, order: 17 },
+  { id: 'recent-notes', visible: false, colSpan: 3, order: 18 },
+  { id: 'time-budget', visible: false, colSpan: 3, order: 19 },
+  { id: 'inbox-widget', visible: false, colSpan: 3, order: 20 },
 ];
+
+const DEFAULT_OVERVIEW_LAYOUT: OverviewWidgetConfig[] = ALL_OVERVIEW_WIDGETS;
 
 const WIDGET_TITLES: Record<string, string> = {
   'today-progress': "Today's Progress",
@@ -55,6 +86,15 @@ const WIDGET_TITLES: Record<string, string> = {
   'personal-goals': 'Personal Goals',
   'recent-activity': 'Recent Activity',
   'quick-actions': 'Quick Actions',
+  'quick-capture': 'Quick Capture',
+  'mini-calendar': 'Mini Calendar',
+  'focus-session': 'Focus Session',
+  'goal-progress-widget': 'Goal Progress',
+  'task-breakdown': 'Task Breakdown',
+  'productivity-trend': 'Productivity Trend',
+  'recent-notes': 'Recent Notes',
+  'time-budget': 'Time Budget',
+  'inbox-widget': 'Inbox',
 };
 
 export const OverviewView: React.FC<OverviewViewProps> = ({ onEditTask }) => {
@@ -62,8 +102,14 @@ export const OverviewView: React.FC<OverviewViewProps> = ({ onEditTask }) => {
     tasks,
     projects,
     goals,
+    notes,
+    selectedDate,
+    setSelectedDate,
+    activeFocusTaskId,
+    setActiveFocusTaskId,
     setCurrentView,
     dismissOnboarding,
+    quickAddTask,
     settings,
     updateSettings,
   } = useOrganiser();
@@ -74,13 +120,19 @@ export const OverviewView: React.FC<OverviewViewProps> = ({ onEditTask }) => {
   const [draggedWidgetId, setDraggedWidgetId] = useState<string | null>(null);
   const [dragOverWidgetId, setDragOverWidgetId] = useState<string | null>(null);
 
+  // Widget specific states
+  const [quickCaptureInput, setQuickCaptureInput] = useState('');
+  const [isCapturing, setIsCapturing] = useState(false);
+  const [miniCalCurrentMonth, setMiniCalCurrentMonth] = useState<Date>(new Date());
+
   const todayStr = format(new Date(), 'yyyy-MM-dd');
 
-  // Layout state resolution
-  const activeLayout: OverviewWidgetConfig[] =
-    settings.overviewLayout && settings.overviewLayout.length > 0
-      ? settings.overviewLayout
-      : DEFAULT_OVERVIEW_LAYOUT;
+  // Layout state resolution with graceful registry merging for newly registered widgets
+  const userLayout = settings.overviewLayout || [];
+  const activeLayout: OverviewWidgetConfig[] = ALL_OVERVIEW_WIDGETS.map((registered) => {
+    const existing = userLayout.find((u) => u.id === registered.id);
+    return existing ? existing : registered;
+  });
 
   const sortedLayout = [...activeLayout].sort((a, b) => a.order - b.order);
   const visibleWidgets = sortedLayout.filter((w) => w.visible);
@@ -714,6 +766,629 @@ export const OverviewView: React.FC<OverviewViewProps> = ({ onEditTask }) => {
             </div>
           </div>
         );
+
+      /* ==========================================================================
+         Phase 3 Expansion Widgets
+         ========================================================================== */
+
+      case 'quick-capture':
+        const handleQuickCaptureSubmit = async (e: React.FormEvent) => {
+          e.preventDefault();
+          if (!quickCaptureInput.trim() || isCapturing) return;
+          setIsCapturing(true);
+          try {
+            await quickAddTask(quickCaptureInput.trim());
+            setQuickCaptureInput('');
+          } finally {
+            setIsCapturing(false);
+          }
+        };
+
+        return (
+          <div
+            className="stat-card"
+            style={{
+              backgroundColor: 'var(--bg-card)',
+              padding: '1.4rem 1.6rem',
+              borderRadius: 'var(--radius-lg)',
+              border: '1px solid var(--border-color)',
+              display: 'flex',
+              flexDirection: 'column',
+              justifyContent: 'space-between',
+              height: '100%',
+            }}
+          >
+            <div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.85rem' }}>
+                <Plus size={20} style={{ color: 'var(--accent-primary)' }} />
+                <span style={{ fontSize: 'var(--font-lg)', fontWeight: 700, color: 'var(--text-primary)' }}>Quick Capture</span>
+              </div>
+              <p style={{ fontSize: 'var(--font-sm)', color: 'var(--text-secondary)', marginBottom: '1rem' }}>
+                Type a task and press Enter (supports dates like "tomorrow" or "p1").
+              </p>
+              <form onSubmit={handleQuickCaptureSubmit} style={{ display: 'flex', gap: '0.5rem' }}>
+                <input
+                  type="text"
+                  placeholder="Add a task..."
+                  value={quickCaptureInput}
+                  onChange={(e) => setQuickCaptureInput(e.target.value)}
+                  className="input"
+                  style={{ flex: 1, padding: '0.5rem 0.85rem', fontSize: 'var(--font-base)' }}
+                />
+                <button
+                  type="submit"
+                  disabled={!quickCaptureInput.trim() || isCapturing}
+                  className="btn btn-primary"
+                  style={{ padding: '0.5rem 0.85rem', minHeight: '36px' }}
+                >
+                  <Plus size={16} /> Add
+                </button>
+              </form>
+            </div>
+          </div>
+        );
+
+      case 'mini-calendar': {
+        const startWeek = startOfWeek(miniCalCurrentMonth, { weekStartsOn: settings.startOfWeek || 1 });
+        const monthDays: Date[] = [];
+        for (let i = 0; i < 35; i++) {
+          monthDays.push(addDays(startWeek, i));
+        }
+
+        const taskDatesSet = new Set(tasks.filter((t) => !t.archived && t.dueDate).map((t) => t.dueDate));
+
+        return (
+          <div
+            className="stat-card"
+            style={{
+              backgroundColor: 'var(--bg-card)',
+              padding: '1.4rem 1.6rem',
+              borderRadius: 'var(--radius-lg)',
+              border: '1px solid var(--border-color)',
+              display: 'flex',
+              flexDirection: 'column',
+              justifyContent: 'space-between',
+              height: '100%',
+            }}
+          >
+            <div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                  <Calendar size={18} style={{ color: 'var(--accent-primary)' }} />
+                  <span style={{ fontSize: 'var(--font-md)', fontWeight: 700, color: 'var(--text-primary)' }}>
+                    {format(miniCalCurrentMonth, 'MMMM yyyy')}
+                  </span>
+                </div>
+                <div style={{ display: 'flex', gap: '0.25rem' }}>
+                  <button
+                    onClick={() => setMiniCalCurrentMonth((prev) => subMonths(prev, 1))}
+                    className="btn-icon"
+                    style={{ width: '26px', height: '26px' }}
+                    title="Previous Month"
+                  >
+                    <ChevronLeft size={14} />
+                  </button>
+                  <button
+                    onClick={() => setMiniCalCurrentMonth((prev) => addMonths(prev, 1))}
+                    className="btn-icon"
+                    style={{ width: '26px', height: '26px' }}
+                    title="Next Month"
+                  >
+                    <ChevronRight size={14} />
+                  </button>
+                </div>
+              </div>
+
+              {/* Day Headers */}
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', textAlign: 'center', marginBottom: '0.35rem' }}>
+                {['M', 'T', 'W', 'T', 'F', 'S', 'S'].map((d, i) => (
+                  <span key={i} style={{ fontSize: 'var(--font-xs)', fontWeight: 700, color: 'var(--text-muted)' }}>
+                    {d}
+                  </span>
+                ))}
+              </div>
+
+              {/* Day Grid */}
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: '2px', textAlign: 'center' }}>
+                {monthDays.map((day, idx) => {
+                  const dayStr = format(day, 'yyyy-MM-dd');
+                  const isToday = isSameDay(day, new Date());
+                  const isSelected = selectedDate === dayStr;
+                  const inCurrentMonth = isSameMonth(day, miniCalCurrentMonth);
+                  const hasTasks = taskDatesSet.has(dayStr);
+
+                  return (
+                    <button
+                      key={idx}
+                      onClick={() => {
+                        setSelectedDate(dayStr);
+                        setCurrentView('day');
+                      }}
+                      style={{
+                        padding: '0.3rem 0',
+                        fontSize: 'var(--font-xs)',
+                        fontWeight: isSelected || isToday ? 800 : 500,
+                        borderRadius: 'var(--radius-sm)',
+                        border: 'none',
+                        backgroundColor: isSelected
+                          ? 'var(--accent-primary)'
+                          : isToday
+                          ? 'var(--accent-light)'
+                          : 'transparent',
+                        color: isSelected
+                          ? '#ffffff'
+                          : isToday
+                          ? 'var(--accent-primary)'
+                          : inCurrentMonth
+                          ? 'var(--text-primary)'
+                          : 'var(--text-muted)',
+                        cursor: 'pointer',
+                        position: 'relative',
+                      }}
+                    >
+                      {format(day, 'd')}
+                      {hasTasks && !isSelected && (
+                        <div
+                          style={{
+                            width: '4px',
+                            height: '4px',
+                            borderRadius: '50%',
+                            backgroundColor: 'var(--accent-primary)',
+                            margin: '1px auto 0 auto',
+                          }}
+                        />
+                      )}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          </div>
+        );
+      }
+
+      case 'focus-session': {
+        const focusTask = tasks.find((t) => t.id === activeFocusTaskId) || tasks.find((t) => !t.archived && !t.completed);
+
+        return (
+          <div
+            className="stat-card"
+            style={{
+              backgroundColor: 'var(--bg-card)',
+              padding: '1.4rem 1.6rem',
+              borderRadius: 'var(--radius-lg)',
+              border: '1px solid var(--border-color)',
+              display: 'flex',
+              flexDirection: 'column',
+              justifyContent: 'space-between',
+              height: '100%',
+            }}
+          >
+            <div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                  <Clock size={20} style={{ color: '#f59e0b' }} />
+                  <span style={{ fontSize: 'var(--font-lg)', fontWeight: 700, color: 'var(--text-primary)' }}>Focus Session</span>
+                </div>
+                <span style={{ fontSize: 'var(--font-xs)', fontWeight: 700, color: '#f59e0b', backgroundColor: '#f59e0b22', padding: '0.2rem 0.5rem', borderRadius: 'var(--radius-full)' }}>
+                  25m Pomodoro
+                </span>
+              </div>
+
+              {focusTask ? (
+                <div>
+                  <div style={{ fontSize: 'var(--font-xs)', color: 'var(--text-muted)', textTransform: 'uppercase', fontWeight: 700 }}>
+                    Target Task
+                  </div>
+                  <div style={{ fontSize: 'var(--font-base)', fontWeight: 600, color: 'var(--text-primary)', margin: '0.25rem 0 1rem 0' }}>
+                    {focusTask.title}
+                  </div>
+                </div>
+              ) : (
+                <div style={{ fontSize: 'var(--font-sm)', color: 'var(--text-muted)', fontStyle: 'italic', marginBottom: '1rem' }}>
+                  No task selected. Starting Focus Mode will pick your next open task.
+                </div>
+              )}
+            </div>
+
+            <button
+              onClick={() => {
+                if (focusTask) setActiveFocusTaskId(focusTask.id);
+                setCurrentView('focus');
+              }}
+              className="btn btn-primary"
+              style={{ width: '100%', padding: '0.55rem', fontSize: 'var(--font-sm)', gap: '0.5rem', backgroundColor: '#f59e0b' }}
+            >
+              <Play size={16} /> Start Focus Session
+            </button>
+          </div>
+        );
+      }
+
+      case 'goal-progress-widget':
+        return (
+          <div
+            className="stat-card"
+            style={{
+              backgroundColor: 'var(--bg-card)',
+              padding: '1.4rem 1.6rem',
+              borderRadius: 'var(--radius-lg)',
+              border: '1px solid var(--border-color)',
+              display: 'flex',
+              flexDirection: 'column',
+              justifyContent: 'space-between',
+              height: '100%',
+            }}
+          >
+            <div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                  <Target size={20} style={{ color: '#10b981' }} />
+                  <span style={{ fontSize: 'var(--font-lg)', fontWeight: 700, color: 'var(--text-primary)' }}>Goal Progress</span>
+                </div>
+                <span style={{ fontSize: 'var(--font-xs)', color: 'var(--text-muted)' }}>{goals.length} Active</span>
+              </div>
+
+              {goals.length === 0 ? (
+                <div style={{ textAlign: 'center', padding: '1rem 0' }}>
+                  <p style={{ fontSize: 'var(--font-sm)', color: 'var(--text-muted)', fontStyle: 'italic', marginBottom: '0.75rem' }}>
+                    No active goals
+                  </p>
+                  <button
+                    onClick={() => setCurrentView('goals')}
+                    className="btn btn-secondary"
+                    style={{ fontSize: 'var(--font-xs)', padding: '0.35rem 0.75rem' }}
+                  >
+                    Create your first goal
+                  </button>
+                </div>
+              ) : (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.85rem' }}>
+                  {goals.slice(0, 3).map((g) => {
+                    const pct = Math.min(100, Math.round((g.currentCount / g.targetCount) * 100));
+                    return (
+                      <div key={g.id} style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 'var(--font-sm)', fontWeight: 600 }}>
+                          <span style={{ color: 'var(--text-primary)' }}>{g.title}</span>
+                          <span style={{ color: 'var(--text-secondary)' }}>{pct}%</span>
+                        </div>
+                        <div style={{ height: '6px', backgroundColor: 'var(--bg-tertiary)', borderRadius: 'var(--radius-full)', overflow: 'hidden' }}>
+                          <div style={{ height: '100%', width: `${pct}%`, backgroundColor: g.completed ? '#10b981' : '#f59e0b' }} />
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+
+            <div style={{ display: 'flex', justifyContent: 'center', paddingTop: '0.75rem', marginTop: '0.75rem', borderTop: '1px solid var(--border-color)' }}>
+              <span
+                onClick={() => setCurrentView('goals')}
+                style={{ fontSize: 'var(--font-sm)', color: 'var(--accent-primary)', fontWeight: 600, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.35rem' }}
+              >
+                Open Goals view <ArrowRight size={14} />
+              </span>
+            </div>
+          </div>
+        );
+
+      case 'task-breakdown': {
+        const total = tasks.filter((t) => !t.archived).length;
+        const completed = tasks.filter((t) => !t.archived && t.completed).length;
+        const remaining = total - completed;
+        const overdue = tasks.filter((t) => !t.archived && !t.completed && t.dueDate && t.dueDate < todayStr).length;
+
+        return (
+          <div
+            className="stat-card"
+            style={{
+              backgroundColor: 'var(--bg-card)',
+              padding: '1.4rem 1.6rem',
+              borderRadius: 'var(--radius-lg)',
+              border: '1px solid var(--border-color)',
+              display: 'flex',
+              flexDirection: 'column',
+              justifyContent: 'space-between',
+              height: '100%',
+            }}
+          >
+            <div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                  <BarChart3 size={20} style={{ color: 'var(--accent-primary)' }} />
+                  <span style={{ fontSize: 'var(--font-lg)', fontWeight: 700, color: 'var(--text-primary)' }}>Task Breakdown</span>
+                </div>
+              </div>
+
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '0.75rem' }}>
+                <div style={{ backgroundColor: 'var(--bg-secondary)', padding: '0.75rem', borderRadius: 'var(--radius-md)', textAlign: 'center' }}>
+                  <div style={{ fontSize: 'var(--font-xl)', fontWeight: 800, color: 'var(--text-primary)' }}>{total}</div>
+                  <div style={{ fontSize: 'var(--font-xs)', color: 'var(--text-muted)' }}>Total Tasks</div>
+                </div>
+                <div style={{ backgroundColor: 'var(--bg-secondary)', padding: '0.75rem', borderRadius: 'var(--radius-md)', textAlign: 'center' }}>
+                  <div style={{ fontSize: 'var(--font-xl)', fontWeight: 800, color: '#10b981' }}>{completed}</div>
+                  <div style={{ fontSize: 'var(--font-xs)', color: 'var(--text-muted)' }}>Completed</div>
+                </div>
+                <div style={{ backgroundColor: 'var(--bg-secondary)', padding: '0.75rem', borderRadius: 'var(--radius-md)', textAlign: 'center' }}>
+                  <div style={{ fontSize: 'var(--font-xl)', fontWeight: 800, color: 'var(--accent-primary)' }}>{remaining}</div>
+                  <div style={{ fontSize: 'var(--font-xs)', color: 'var(--text-muted)' }}>Remaining</div>
+                </div>
+                <div style={{ backgroundColor: 'var(--bg-secondary)', padding: '0.75rem', borderRadius: 'var(--radius-md)', textAlign: 'center' }}>
+                  <div style={{ fontSize: 'var(--font-xl)', fontWeight: 800, color: overdue > 0 ? '#ef4444' : 'var(--text-muted)' }}>{overdue}</div>
+                  <div style={{ fontSize: 'var(--font-xs)', color: 'var(--text-muted)' }}>Overdue</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        );
+      }
+
+      case 'productivity-trend': {
+        const last7Days: Date[] = [];
+        for (let i = 6; i >= 0; i--) {
+          last7Days.push(subDays(new Date(), i));
+        }
+
+        const maxCompletions = Math.max(
+          1,
+          ...last7Days.map((d) => {
+            const dateStr = format(d, 'yyyy-MM-dd');
+            return tasks.filter((t) => t.completed && t.completedAt && t.completedAt.startsWith(dateStr)).length;
+          })
+        );
+
+        return (
+          <div
+            className="stat-card"
+            style={{
+              backgroundColor: 'var(--bg-card)',
+              padding: '1.4rem 1.6rem',
+              borderRadius: 'var(--radius-lg)',
+              border: '1px solid var(--border-color)',
+              display: 'flex',
+              flexDirection: 'column',
+              justifyContent: 'space-between',
+              height: '100%',
+            }}
+          >
+            <div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                  <Activity size={20} style={{ color: 'var(--accent-primary)' }} />
+                  <span style={{ fontSize: 'var(--font-lg)', fontWeight: 700, color: 'var(--text-primary)' }}>Productivity Trend</span>
+                </div>
+                <span style={{ fontSize: 'var(--font-xs)', color: 'var(--text-muted)' }}>Last 7 Days</span>
+              </div>
+
+              {/* Bar Chart Visual */}
+              <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', height: '90px', padding: '0 0.5rem', gap: '0.5rem' }}>
+                {last7Days.map((d, i) => {
+                  const dateStr = format(d, 'yyyy-MM-dd');
+                  const count = tasks.filter((t) => t.completed && t.completedAt && t.completedAt.startsWith(dateStr)).length;
+                  const heightPct = Math.max(10, Math.round((count / maxCompletions) * 100));
+
+                  return (
+                    <div key={i} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', flex: 1, gap: '0.35rem' }}>
+                      <span style={{ fontSize: '10px', fontWeight: 700, color: count > 0 ? 'var(--accent-primary)' : 'var(--text-muted)' }}>
+                        {count}
+                      </span>
+                      <div
+                        style={{
+                          width: '100%',
+                          maxWidth: '24px',
+                          height: `${heightPct}%`,
+                          backgroundColor: count > 0 ? 'var(--accent-primary)' : 'var(--bg-tertiary)',
+                          borderRadius: 'var(--radius-sm)',
+                        }}
+                      />
+                      <span style={{ fontSize: '10px', color: 'var(--text-muted)' }}>{format(d, 'eee')}</span>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          </div>
+        );
+      }
+
+      case 'recent-notes': {
+        const recentNotes = [...notes]
+          .sort((a, b) => b.updatedAt.localeCompare(a.updatedAt))
+          .slice(0, 3);
+
+        return (
+          <div
+            className="stat-card"
+            style={{
+              backgroundColor: 'var(--bg-card)',
+              padding: '1.4rem 1.6rem',
+              borderRadius: 'var(--radius-lg)',
+              border: '1px solid var(--border-color)',
+              display: 'flex',
+              flexDirection: 'column',
+              justifyContent: 'space-between',
+              height: '100%',
+            }}
+          >
+            <div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                  <FileText size={20} style={{ color: 'var(--accent-primary)' }} />
+                  <span style={{ fontSize: 'var(--font-lg)', fontWeight: 700, color: 'var(--text-primary)' }}>Recent Notes</span>
+                </div>
+                <span style={{ fontSize: 'var(--font-xs)', color: 'var(--text-muted)' }}>{notes.length} total</span>
+              </div>
+
+              {recentNotes.length === 0 ? (
+                <div style={{ textAlign: 'center', padding: '1rem 0' }}>
+                  <p style={{ fontSize: 'var(--font-sm)', color: 'var(--text-muted)', fontStyle: 'italic', marginBottom: '0.75rem' }}>
+                    No notes yet
+                  </p>
+                  <button
+                    onClick={() => setCurrentView('notes')}
+                    className="btn btn-secondary"
+                    style={{ fontSize: 'var(--font-xs)', padding: '0.35rem 0.75rem' }}
+                  >
+                    Create a note
+                  </button>
+                </div>
+              ) : (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.65rem' }}>
+                  {recentNotes.map((n) => (
+                    <div
+                      key={n.id}
+                      onClick={() => setCurrentView('notes')}
+                      style={{
+                        display: 'flex',
+                        flexDirection: 'column',
+                        gap: '0.15rem',
+                        cursor: 'pointer',
+                        padding: '0.4rem 0.6rem',
+                        borderRadius: 'var(--radius-md)',
+                        backgroundColor: 'var(--bg-secondary)',
+                      }}
+                    >
+                      <span style={{ fontSize: 'var(--font-sm)', fontWeight: 600, color: 'var(--text-primary)' }}>{n.title}</span>
+                      <span style={{ fontSize: '10px', color: 'var(--text-muted)' }}>
+                        Updated {format(parseISO(n.updatedAt), 'MMM d')}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            <div style={{ display: 'flex', justifyContent: 'center', paddingTop: '0.75rem', marginTop: '0.75rem', borderTop: '1px solid var(--border-color)' }}>
+              <span
+                onClick={() => setCurrentView('notes')}
+                style={{ fontSize: 'var(--font-sm)', color: 'var(--accent-primary)', fontWeight: 600, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.35rem' }}
+              >
+                Open Notes view <ArrowRight size={14} />
+              </span>
+            </div>
+          </div>
+        );
+      }
+
+      case 'time-budget': {
+        const todayScheduledTasks = tasks.filter((t) => !t.archived && t.dueDate === todayStr);
+        const totalMinutes = todayScheduledTasks.reduce((acc, t) => acc + (t.duration || 30), 0);
+        const completedMinutes = todayScheduledTasks
+          .filter((t) => t.completed)
+          .reduce((acc, t) => acc + (t.duration || 30), 0);
+        const remainingMinutes = totalMinutes - completedMinutes;
+
+        const formatHours = (mins: number) => {
+          const h = Math.floor(mins / 60);
+          const m = mins % 60;
+          if (h === 0) return `${m}m`;
+          if (m === 0) return `${h}h`;
+          return `${h}h ${m}m`;
+        };
+
+        return (
+          <div
+            className="stat-card"
+            style={{
+              backgroundColor: 'var(--bg-card)',
+              padding: '1.4rem 1.6rem',
+              borderRadius: 'var(--radius-lg)',
+              border: '1px solid var(--border-color)',
+              display: 'flex',
+              flexDirection: 'column',
+              justifyContent: 'space-between',
+              height: '100%',
+            }}
+          >
+            <div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                  <Clock size={20} style={{ color: 'var(--accent-primary)' }} />
+                  <span style={{ fontSize: 'var(--font-lg)', fontWeight: 700, color: 'var(--text-primary)' }}>Time Budget</span>
+                </div>
+                <span style={{ fontSize: 'var(--font-xs)', color: 'var(--text-muted)' }}>Today</span>
+              </div>
+
+              {todayScheduledTasks.length === 0 ? (
+                <div style={{ fontSize: 'var(--font-sm)', color: 'var(--text-muted)', fontStyle: 'italic', padding: '1rem 0', textAlign: 'center' }}>
+                  Nothing scheduled for today
+                </div>
+              ) : (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 'var(--font-sm)' }}>
+                    <span style={{ color: 'var(--text-secondary)' }}>Scheduled:</span>
+                    <span style={{ fontWeight: 700, color: 'var(--text-primary)' }}>{formatHours(totalMinutes)}</span>
+                  </div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 'var(--font-sm)' }}>
+                    <span style={{ color: 'var(--text-secondary)' }}>Completed:</span>
+                    <span style={{ fontWeight: 700, color: '#10b981' }}>{formatHours(completedMinutes)}</span>
+                  </div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 'var(--font-sm)' }}>
+                    <span style={{ color: 'var(--text-secondary)' }}>Remaining:</span>
+                    <span style={{ fontWeight: 700, color: 'var(--accent-primary)' }}>{formatHours(remainingMinutes)}</span>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        );
+      }
+
+      case 'inbox-widget': {
+        const inboxTasks = tasks.filter((t) => !t.archived && !t.dueDate && !t.completed);
+
+        return (
+          <div
+            className="stat-card"
+            style={{
+              backgroundColor: 'var(--bg-card)',
+              padding: '1.4rem 1.6rem',
+              borderRadius: 'var(--radius-lg)',
+              border: '1px solid var(--border-color)',
+              display: 'flex',
+              flexDirection: 'column',
+              justifyContent: 'space-between',
+              height: '100%',
+            }}
+          >
+            <div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                  <Inbox size={20} style={{ color: 'var(--accent-primary)' }} />
+                  <span style={{ fontSize: 'var(--font-lg)', fontWeight: 700, color: 'var(--text-primary)' }}>Inbox</span>
+                </div>
+                <span style={{ fontSize: 'var(--font-xs)', fontWeight: 700, color: 'var(--accent-primary)', backgroundColor: 'var(--accent-light)', padding: '0.2rem 0.5rem', borderRadius: 'var(--radius-full)' }}>
+                  {inboxTasks.length} Unscheduled
+                </span>
+              </div>
+
+              {inboxTasks.length === 0 ? (
+                <div style={{ fontSize: 'var(--font-sm)', color: 'var(--text-muted)', fontStyle: 'italic', padding: '1rem 0', textAlign: 'center' }}>
+                  Inbox is clear! All tasks are scheduled.
+                </div>
+              ) : (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                  {inboxTasks.slice(0, 3).map((t) => (
+                    <div key={t.id} style={{ fontSize: 'var(--font-sm)', color: 'var(--text-secondary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                      • {t.title}
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            <div style={{ display: 'flex', justifyContent: 'center', paddingTop: '0.75rem', marginTop: '0.75rem', borderTop: '1px solid var(--border-color)' }}>
+              <span
+                onClick={() => setCurrentView('inbox')}
+                style={{ fontSize: 'var(--font-sm)', color: 'var(--accent-primary)', fontWeight: 600, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.35rem' }}
+              >
+                Open full Inbox <ArrowRight size={14} />
+              </span>
+            </div>
+          </div>
+        );
+      }
 
       default:
         return null;
