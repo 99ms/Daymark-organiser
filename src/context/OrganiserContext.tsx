@@ -37,6 +37,7 @@ import {
 import type { SafetySnapshot } from '../services/db';
 import { getNextRecurrenceDate, parseNaturalLanguageTask } from '../utils/taskUtils';
 import { applyThemeTokens, clearCustomThemeTokens } from '../utils/themeUtils';
+import { DEFAULT_CATEGORIES, DEFAULT_PROJECTS, SAMPLE_TASKS } from '../services/sampleData';
 import { format } from 'date-fns';
 
 interface OrganiserContextType {
@@ -104,6 +105,7 @@ interface OrganiserContextType {
   importDataJSON: (jsonStr: string) => Promise<boolean>;
   resetAllData: () => Promise<void>;
   dismissOnboarding: () => Promise<void>;
+  resetOnboarding: () => Promise<void>;
   createSnapshot: (trigger?: 'manual' | 'before_import' | 'before_reset' | 'migration') => Promise<SafetySnapshot | null>;
   fetchSnapshots: () => Promise<SafetySnapshot[]>;
   restoreSnapshot: (id: string) => Promise<boolean>;
@@ -753,6 +755,32 @@ export const OrganiserProvider: React.FC<{ children: ReactNode }> = ({ children 
     addToast('Getting Started tasks cleared. Enjoy Daymark!', 'success');
   };
 
+  const resetOnboarding = async () => {
+    // Save onboarding category if missing
+    if (!categories.some((c) => c.id === 'c-onboarding')) {
+      const cat = DEFAULT_CATEGORIES.find((c) => c.id === 'c-onboarding') || DEFAULT_CATEGORIES[0];
+      await saveCategoryToDB(cat);
+      setCategories((prev) => [...prev, cat]);
+    }
+    // Save onboarding project if missing
+    if (!projects.some((p) => p.id === 'proj-onboarding')) {
+      for (const p of DEFAULT_PROJECTS) {
+        await saveProjectToDB(p);
+        setProjects((prev) => [...prev, p]);
+      }
+    }
+    // Save onboarding tasks if missing
+    const existingIds = new Set(tasks.map((t) => t.id));
+    const newSampleTasks = SAMPLE_TASKS.filter((t) => !existingIds.has(t.id));
+    for (const t of newSampleTasks) {
+      await saveTaskToDB(t);
+    }
+    if (newSampleTasks.length > 0) {
+      setTasks((prev) => [...newSampleTasks, ...prev]);
+    }
+    addToast('Getting Started tutorial tasks restored!', 'success');
+  };
+
   return (
     <OrganiserContext.Provider
       value={{
@@ -815,6 +843,7 @@ export const OrganiserProvider: React.FC<{ children: ReactNode }> = ({ children 
         importDataJSON,
         resetAllData,
         dismissOnboarding,
+        resetOnboarding,
         createSnapshot,
         fetchSnapshots,
         restoreSnapshot,

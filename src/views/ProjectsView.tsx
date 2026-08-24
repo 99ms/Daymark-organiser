@@ -43,7 +43,7 @@ export const ProjectsView: React.FC<ProjectsViewProps> = ({ onEditTask }) => {
   };
 
   return (
-    <div style={{ display: 'grid', gridTemplateColumns: '260px 1fr', gap: '1.5rem' }}>
+    <div className="projects-layout" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: '1.5rem' }}>
       <div
         style={{
           backgroundColor: 'var(--bg-card)',
@@ -53,6 +53,7 @@ export const ProjectsView: React.FC<ProjectsViewProps> = ({ onEditTask }) => {
           display: 'flex',
           flexDirection: 'column',
           gap: '0.75rem',
+          height: 'fit-content',
         }}
       >
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
@@ -155,7 +156,7 @@ export const ProjectsView: React.FC<ProjectsViewProps> = ({ onEditTask }) => {
                   </p>
                 )}
 
-                <div style={{ marginTop: '1rem', width: '300px' }}>
+                <div style={{ marginTop: '1rem', width: '100%', maxWidth: '300px' }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '0.25rem' }}>
                     <span>Progress</span>
                     <span>{percent}%</span>

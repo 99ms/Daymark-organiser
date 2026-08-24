@@ -53,6 +53,7 @@ export const SettingsView: React.FC = () => {
     deleteCategory,
     exportDataJSON,
     importDataJSON,
+    resetOnboarding,
     resetAllData,
     createSnapshot,
     fetchSnapshots,
@@ -731,6 +732,14 @@ export const SettingsView: React.FC = () => {
 
           <button onClick={handleCreateManualSnapshot} className="btn btn-secondary">
             <Shield size={16} style={{ color: 'var(--accent-primary)' }} /> Create Safety Snapshot
+          </button>
+
+          <button
+            onClick={() => resetOnboarding()}
+            className="btn btn-secondary"
+            title="Restore Getting Started tutorial tasks without resetting your custom workspace data"
+          >
+            <RotateCcw size={16} /> Restore Tutorial Tasks
           </button>
 
           {!showResetConfirm ? (
