@@ -79,6 +79,7 @@ interface OrganiserContextType {
   deleteSubtask: (taskId: string, subtaskId: string) => Promise<void>;
   applyTemplate: (templateId: string, targetDate?: string) => Promise<void>;
   archiveTask: (id: string) => Promise<void>;
+  unarchiveTask: (id: string) => Promise<void>;
 
   updatePriority: (priority: Priority) => Promise<void>;
   addPriority: (priority: Priority) => Promise<void>;
@@ -219,6 +220,7 @@ export const OrganiserProvider: React.FC<{ children: ReactNode }> = ({ children 
       categoryId: taskData.categoryId || categories[0]?.id || 'c-work',
       tags: taskData.tags || [],
       completed: taskData.completed || false,
+      completedAt: taskData.completed ? (taskData.completedAt || nowIso) : undefined,
       recurrence: taskData.recurrence,
       reminder: taskData.reminder || 'none',
       subtasks: taskData.subtasks || [],
@@ -247,7 +249,19 @@ export const OrganiserProvider: React.FC<{ children: ReactNode }> = ({ children 
   };
 
   const updateTask = async (task: Task) => {
-    const updated = { ...task, updatedAt: new Date().toISOString() };
+    const existing = tasks.find((t) => t.id === task.id);
+    const nowIso = new Date().toISOString();
+    let completedAt = task.completedAt;
+
+    if (task.completed) {
+      if (!existing?.completed || !completedAt) {
+        completedAt = nowIso;
+      }
+    } else {
+      completedAt = undefined;
+    }
+
+    const updated: Task = { ...task, completedAt, updatedAt: nowIso };
     setTasks((prev) => prev.map((t) => (t.id === task.id ? updated : t)));
     await saveTaskToDB(updated);
   };
@@ -283,20 +297,60 @@ export const OrganiserProvider: React.FC<{ children: ReactNode }> = ({ children 
 
     if (newCompleted && task.recurrence) {
       const nextDate = getNextRecurrenceDate(task.dueDate, task.recurrence);
+      let generatedId: string | null = null;
+
       if (nextDate) {
-        const recurringInstance: Task = {
-          ...task,
-          id: 'task-' + Date.now() + '-' + Math.random().toString(36).substring(2, 6),
-          dueDate: nextDate,
-          completed: false,
-          completedAt: undefined,
-          createdAt: nowIso,
-          updatedAt: nowIso,
-        };
-        setTasks((prev) => [recurringInstance, ...prev]);
-        await saveTaskToDB(recurringInstance);
-        addToast(`Next recurring instance scheduled for ${nextDate}`, 'info');
+        // Prevent duplicate instances if task was rapidly uncompleted and re-completed
+        const duplicateExists = tasks.some(
+          (t) =>
+            !t.archived &&
+            !t.completed &&
+            t.title === task.title &&
+            t.dueDate === nextDate &&
+            t.projectId === task.projectId
+        );
+
+        if (!duplicateExists) {
+          const recurringInstance: Task = {
+            ...task,
+            id: 'task-' + Date.now() + '-' + Math.random().toString(36).substring(2, 6),
+            dueDate: nextDate,
+            completed: false,
+            completedAt: undefined,
+            subtasks: (task.subtasks || []).map((st) => ({
+              ...st,
+              id: 'sub-' + Date.now() + '-' + Math.random().toString(36).substring(2, 5),
+              completed: false,
+            })),
+            createdAt: nowIso,
+            updatedAt: nowIso,
+          };
+          generatedId = recurringInstance.id;
+          setTasks((prev) => [recurringInstance, ...prev]);
+          await saveTaskToDB(recurringInstance);
+        }
       }
+
+      addToast(
+        nextDate
+          ? `Task completed. Next occurrence scheduled for ${nextDate}`
+          : 'Task marked complete',
+        'success',
+        async () => {
+          // Undo: Revert the original completed task
+          setTasks((prev) => {
+            let list = prev.map((t) => (t.id === id ? task : t));
+            if (generatedId) {
+              list = list.filter((t) => t.id !== generatedId);
+            }
+            return list;
+          });
+          await saveTaskToDB(task);
+          if (generatedId) {
+            await deleteTaskFromDB(generatedId);
+          }
+        }
+      );
     } else {
       addToast(newCompleted ? 'Task marked complete' : 'Task uncompleted', 'success', async () => {
         setTasks((prev) => prev.map((t) => (t.id === id ? task : t)));
@@ -391,7 +445,23 @@ export const OrganiserProvider: React.FC<{ children: ReactNode }> = ({ children 
     const updated: Task = { ...task, archived: true, updatedAt: new Date().toISOString() };
     setTasks((prev) => prev.map((t) => (t.id === id ? updated : t)));
     await saveTaskToDB(updated);
-    addToast('Task moved to archive', 'info');
+    addToast('Task moved to archive', 'info', async () => {
+      setTasks((prev) => prev.map((t) => (t.id === id ? task : t)));
+      await saveTaskToDB(task);
+    });
+  };
+
+  const unarchiveTask = async (id: string) => {
+    const task = tasks.find((t) => t.id === id);
+    if (!task) return;
+
+    const updated: Task = { ...task, archived: false, updatedAt: new Date().toISOString() };
+    setTasks((prev) => prev.map((t) => (t.id === id ? updated : t)));
+    await saveTaskToDB(updated);
+    addToast('Task restored from archive', 'success', async () => {
+      setTasks((prev) => prev.map((t) => (t.id === id ? task : t)));
+      await saveTaskToDB(task);
+    });
   };
 
   const updatePriority = async (priority: Priority) => {
@@ -650,7 +720,25 @@ export const OrganiserProvider: React.FC<{ children: ReactNode }> = ({ children 
       await clearAllDataFromDB();
       const seedData = await initializeDatabaseWithSeedData();
       
-      const newTasks = parsed.tasks || seedData.tasks;
+      const rawTasks: Task[] = Array.isArray(parsed.tasks) ? parsed.tasks : seedData.tasks;
+      const nowIso = new Date().toISOString();
+      const newTasks: Task[] = rawTasks.map((t) => {
+        const completed = !!t.completed;
+        let completedAt = t.completedAt;
+        if (completed) {
+          if (!completedAt) {
+            completedAt = t.updatedAt || t.createdAt || nowIso;
+          }
+        } else {
+          completedAt = undefined;
+        }
+        return {
+          ...t,
+          completed,
+          completedAt,
+        };
+      });
+
       const newPriorities = Array.isArray(parsed.priorities) && parsed.priorities.length ? parsed.priorities : seedData.priorities;
       const newCategories = Array.isArray(parsed.categories) && parsed.categories.length ? parsed.categories : seedData.categories;
       const newProjects = Array.isArray(parsed.projects) ? parsed.projects : seedData.projects;
@@ -820,6 +908,7 @@ export const OrganiserProvider: React.FC<{ children: ReactNode }> = ({ children 
         deleteSubtask,
         applyTemplate,
         archiveTask,
+        unarchiveTask,
         updatePriority,
         addPriority,
         deletePriority,

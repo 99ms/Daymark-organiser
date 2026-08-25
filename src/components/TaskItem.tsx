@@ -12,6 +12,8 @@ import {
   FolderKanban,
   ChevronDown,
   ChevronUp,
+  Archive,
+  ArchiveRestore,
 } from 'lucide-react';
 import { isTaskOverdue } from '../utils/taskUtils';
 
@@ -25,6 +27,8 @@ export const TaskItem: React.FC<TaskItemProps> = ({ task, onEdit, showDate = fal
   const {
     toggleCompleteTask,
     deleteTask,
+    archiveTask,
+    unarchiveTask,
     toggleTopPriority,
     priorities,
     categories,
@@ -138,6 +142,28 @@ export const TaskItem: React.FC<TaskItemProps> = ({ task, onEdit, showDate = fal
           >
             <Edit2 size={16} />
           </button>
+
+          {task.archived ? (
+            <button
+              onClick={() => unarchiveTask(task.id)}
+              className="btn-icon"
+              style={{ width: 34, height: 34, color: 'var(--accent-primary)' }}
+              title="Restore task to active views"
+              aria-label="Restore task to active views"
+            >
+              <ArchiveRestore size={16} />
+            </button>
+          ) : (
+            <button
+              onClick={() => archiveTask(task.id)}
+              className="btn-icon"
+              style={{ width: 34, height: 34, color: 'var(--text-muted)' }}
+              title="Archive task"
+              aria-label="Archive task"
+            >
+              <Archive size={16} />
+            </button>
+          )}
 
           <button
             onClick={() => deleteTask(task.id)}

@@ -1135,7 +1135,14 @@ export const OverviewView: React.FC<OverviewViewProps> = ({ onEditTask }) => {
           1,
           ...last7Days.map((d) => {
             const dateStr = format(d, 'yyyy-MM-dd');
-            return tasks.filter((t) => t.completed && t.completedAt && t.completedAt.startsWith(dateStr)).length;
+            return tasks.filter((t) => {
+              if (!t.completed || !t.completedAt) return false;
+              try {
+                return format(parseISO(t.completedAt), 'yyyy-MM-dd') === dateStr;
+              } catch {
+                return false;
+              }
+            }).length;
           })
         );
 
@@ -1166,7 +1173,14 @@ export const OverviewView: React.FC<OverviewViewProps> = ({ onEditTask }) => {
               <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', height: '90px', padding: '0 0.5rem', gap: '0.5rem' }}>
                 {last7Days.map((d, i) => {
                   const dateStr = format(d, 'yyyy-MM-dd');
-                  const count = tasks.filter((t) => t.completed && t.completedAt && t.completedAt.startsWith(dateStr)).length;
+                  const count = tasks.filter((t) => {
+                    if (!t.completed || !t.completedAt) return false;
+                    try {
+                      return format(parseISO(t.completedAt), 'yyyy-MM-dd') === dateStr;
+                    } catch {
+                      return false;
+                    }
+                  }).length;
                   const heightPct = Math.max(10, Math.round((count / maxCompletions) * 100));
 
                   return (
