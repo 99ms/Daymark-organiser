@@ -317,6 +317,7 @@ export const OrganiserProvider: React.FC<{ children: ReactNode }> = ({ children 
             dueDate: nextDate,
             completed: false,
             completedAt: undefined,
+            archived: false,
             subtasks: (task.subtasks || []).map((st) => ({
               ...st,
               id: 'sub-' + Date.now() + '-' + Math.random().toString(36).substring(2, 5),
@@ -734,8 +735,12 @@ export const OrganiserProvider: React.FC<{ children: ReactNode }> = ({ children 
         }
         return {
           ...t,
+          id: t.id || 'task-' + Date.now() + '-' + Math.random().toString(36).substring(2, 6),
+          title: typeof t.title === 'string' ? t.title : 'Untitled Task',
+          dueDate: typeof t.dueDate === 'string' ? t.dueDate : '',
           completed,
           completedAt,
+          archived: !!t.archived,
           subtasks: Array.isArray(t.subtasks)
             ? t.subtasks.map((st) => ({
                 id: st.id || 'sub-' + Date.now() + '-' + Math.random().toString(36).substring(2, 5),
