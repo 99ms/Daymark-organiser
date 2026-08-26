@@ -19,7 +19,6 @@ import {
   ChevronRight,
   Flame,
   Clock,
-  Sparkles,
 } from 'lucide-react';
 import { isTaskOverdue } from '../utils/taskUtils';
 import { format } from 'date-fns';
@@ -64,8 +63,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ onOpenNewTaskModal }) => {
         <div className="sidebar-header">
           {!collapsed && (
             <div className="sidebar-logo">
-              <Sparkles size={22} />
-              <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.45rem' }}>
                 <span>Daymark</span>
                 <span
                   style={{

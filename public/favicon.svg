@@ -4,7 +4,7 @@
       <stop offset="0%" stop-color="#818cf8" />
       <stop offset="100%" stop-color="#4f46e5" />
     </linearGradient>
-    <linearGradient id="sparkle-grad" x1="0%" y1="0%" x2="100%" y2="100%">
+    <linearGradient id="daymark-accent-grad" x1="0%" y1="0%" x2="100%" y2="100%">
       <stop offset="0%" stop-color="#fbbf24" />
       <stop offset="100%" stop-color="#f59e0b" />
     </linearGradient>
@@ -16,6 +16,6 @@
   <!-- Geometric "D" Symbol Path -->
   <path d="M 144 128 L 260 128 C 340 128 400 185 400 256 C 400 327 340 384 260 384 L 144 384 Z M 216 192 L 216 320 L 256 320 C 298 320 328 292 328 256 C 328 220 298 192 256 192 Z" fill="#ffffff" />
   
-  <!-- Glowing Sun / Star Accent in the D Loop -->
-  <path d="M 256 220 L 263 245 L 288 256 L 263 267 L 256 292 L 249 267 L 224 256 L 249 245 Z" fill="url(#sparkle-grad)" />
+  <!-- Daymark Accent Pip -->
+  <circle cx="256" cy="256" r="24" fill="url(#daymark-accent-grad)" />
 </svg>

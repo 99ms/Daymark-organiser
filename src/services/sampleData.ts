@@ -13,7 +13,7 @@ export const DEFAULT_PRIORITIES: Priority[] = [
 ];
 
 export const DEFAULT_CATEGORIES: Category[] = [
-  { id: 'c-onboarding', name: 'Getting Started', color: '#6366f1', icon: 'Sparkles' },
+  { id: 'c-onboarding', name: 'Getting Started', color: '#6366f1', icon: 'Compass' },
   { id: 'c-work', name: 'Work', color: '#3b82f6', icon: 'Briefcase' },
   { id: 'c-personal', name: 'Personal', color: '#8b5cf6', icon: 'User' },
   { id: 'c-fitness', name: 'Fitness & Health', color: '#10b981', icon: 'Activity' },

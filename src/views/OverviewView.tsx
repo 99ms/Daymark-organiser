@@ -25,7 +25,7 @@ import {
   CheckCircle2,
   Zap,
   ArrowRight,
-  Sparkles,
+  Compass,
   X,
   SlidersHorizontal,
   RotateCcw,
@@ -1481,7 +1481,7 @@ export const OverviewView: React.FC<OverviewViewProps> = ({ onEditTask }) => {
                 flexShrink: 0,
               }}
             >
-              <Sparkles size={22} />
+              <Compass size={22} />
             </div>
             <div>
               <h2 style={{ fontSize: 'var(--font-lg)', fontWeight: 800, color: 'var(--text-primary)' }}>
