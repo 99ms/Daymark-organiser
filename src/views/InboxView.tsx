@@ -36,7 +36,10 @@ export const InboxView: React.FC<InboxViewProps> = ({ onEditTask }) => {
         </div>
       </div>
 
-      <QuickAddBar />
+      <QuickAddBar
+        defaultDueDate=""
+        placeholder='Quick capture to inbox (e.g. "Buy coffee" or "Review proposal tomorrow")'
+      />
 
       <div>
         <h3 style={{ fontSize: '1rem', fontWeight: 600, color: 'var(--text-secondary)', marginBottom: '0.75rem' }}>

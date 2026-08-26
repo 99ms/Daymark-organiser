@@ -2,7 +2,15 @@ import React, { useState } from 'react';
 import { useOrganiser } from '../context/OrganiserContext';
 import { Plus, Zap } from 'lucide-react';
 
-export const QuickAddBar: React.FC = () => {
+interface QuickAddBarProps {
+  defaultDueDate?: string;
+  placeholder?: string;
+}
+
+export const QuickAddBar: React.FC<QuickAddBarProps> = ({
+  defaultDueDate,
+  placeholder = 'Quick add: "Finish presentation tomorrow at 4pm high priority"',
+}) => {
   const { quickAddTask } = useOrganiser();
   const [input, setInput] = useState('');
 
@@ -10,7 +18,7 @@ export const QuickAddBar: React.FC = () => {
     e.preventDefault();
     if (!input.trim()) return;
 
-    await quickAddTask(input.trim());
+    await quickAddTask(input.trim(), defaultDueDate);
     setInput('');
   };
 
@@ -32,7 +40,7 @@ export const QuickAddBar: React.FC = () => {
       <Zap size={20} style={{ color: 'var(--accent-primary)', flexShrink: 0 }} />
       <input
         type="text"
-        placeholder='Quick add: "Finish presentation tomorrow at 4pm high priority"'
+        placeholder={placeholder}
         value={input}
         onChange={(e) => setInput(e.target.value)}
         style={{

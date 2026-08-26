@@ -68,7 +68,7 @@ interface OrganiserContextType {
   toasts: ToastMessage[];
 
   addTask: (taskData: Partial<Task>) => Promise<Task>;
-  quickAddTask: (input: string) => Promise<Task>;
+  quickAddTask: (input: string, defaultDueDate?: string) => Promise<Task>;
   updateTask: (task: Task) => Promise<void>;
   deleteTask: (id: string) => Promise<void>;
   toggleCompleteTask: (id: string) => Promise<void>;
@@ -213,7 +213,7 @@ export const OrganiserProvider: React.FC<{ children: ReactNode }> = ({ children 
       id: 'task-' + Date.now() + '-' + Math.random().toString(36).substring(2, 6),
       title: taskData.title || 'Untitled Task',
       description: taskData.description || '',
-      dueDate: taskData.dueDate || format(new Date(), 'yyyy-MM-dd'),
+      dueDate: taskData.dueDate !== undefined ? taskData.dueDate : format(new Date(), 'yyyy-MM-dd'),
       dueTime: taskData.dueTime || undefined,
       duration: taskData.duration || settings.defaultDuration,
       priorityId: taskData.priorityId || settings.defaultPriorityId || priorities[0]?.id || 'p-med',
@@ -238,8 +238,8 @@ export const OrganiserProvider: React.FC<{ children: ReactNode }> = ({ children 
     return newTask;
   };
 
-  const quickAddTask = async (input: string): Promise<Task> => {
-    const parsed = parseNaturalLanguageTask(input, priorities, settings.defaultPriorityId);
+  const quickAddTask = async (input: string, defaultDueDate?: string): Promise<Task> => {
+    const parsed = parseNaturalLanguageTask(input, priorities, settings.defaultPriorityId, defaultDueDate);
     return await addTask({
       title: parsed.title,
       dueDate: parsed.dueDate,

@@ -70,10 +70,11 @@ export interface ParsedQuickAdd {
 export function parseNaturalLanguageTask(
   text: string,
   priorities: Priority[],
-  defaultPriorityId: string
+  defaultPriorityId: string,
+  defaultDueDate?: string
 ): ParsedQuickAdd {
   let workingText = text.trim();
-  let dueDate = format(new Date(), 'yyyy-MM-dd');
+  let dueDate = defaultDueDate !== undefined ? defaultDueDate : format(new Date(), 'yyyy-MM-dd');
   let dueTime: string | undefined = undefined;
   let matchedPriorityId: string | undefined = undefined;
 

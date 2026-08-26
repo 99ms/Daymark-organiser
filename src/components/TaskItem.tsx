@@ -16,6 +16,7 @@ import {
   ArchiveRestore,
 } from 'lucide-react';
 import { isTaskOverdue } from '../utils/taskUtils';
+import { format } from 'date-fns';
 
 interface TaskItemProps {
   task: Task;
@@ -125,7 +126,7 @@ export const TaskItem: React.FC<TaskItemProps> = ({ task, onEdit, showDate = fal
 
           {overdue && (
             <button
-              onClick={() => rescheduleTask(task.id, new Date().toISOString().split('T')[0])}
+              onClick={() => rescheduleTask(task.id, format(new Date(), 'yyyy-MM-dd'))}
               className="btn btn-secondary"
               style={{ padding: '0.35rem 0.75rem', fontSize: 'var(--font-sm)', color: '#ef4444', minHeight: '34px' }}
               title="Move overdue task to today"
