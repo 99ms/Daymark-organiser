@@ -5,6 +5,25 @@ All notable changes to the Daymark Organiser project will be documented in this 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.2.0-beta.2] - 2026-08-26
+
+### Added
+- **Productivity Activity Heatmap**: 52-week activity grid in Statistics visualizing daily task completion volume with visibility toggle.
+- **Tutorial Task Recovery**: Added a "Restore Tutorial Tasks" option in Settings to safely restore the Getting Started onboarding dataset without overwriting user data.
+- **Direct Archive & Restore Controls**: Added direct Archive and Restore action buttons with accessible ARIA labels to task cards.
+
+### Improved
+- **Task Completion & Recurrence Integrity**: Hardened completion timestamp synchronization across mutation paths; recurring task completions generate deduplicated future occurrences with reset subtask states and comprehensive undo support.
+- **Responsive Layouts**: Enhanced Projects view layout with responsive 12-column grid scaling across mobile, tablet, and desktop screens.
+- **Local Date Semantics**: Aligned "Move to Today", overdue detection, and productivity analytics with local calendar dates to eliminate timezone-induced calendar shifts.
+- **Import Normalization**: Strengthened JSON backup import validation to defensively normalize task IDs, string titles, due dates, completion timestamps, and subtask arrays.
+
+### Fixed
+- **Subtask Editor Persistence**: Fixed a stale task reference in `TaskEditorModal` that could overwrite live subtask changes upon saving task edits.
+- **Inbox Quick Capture**: Fixed Quick Capture in the Inbox view defaulting plain tasks to today's date, ensuring unscheduled items remain in the Inbox.
+- **Archived Recurrence Occurrence**: Ensured new occurrences generated from archived recurring tasks are created in the active schedule rather than remaining archived.
+- **Defensive Subtask Array Handling**: Added defensive fallbacks across all views and context methods to prevent runtime exceptions when handling legacy tasks without subtask arrays.
+
 ## [0.2.0-beta.1] - 2026-08-17
 
 ### Added
