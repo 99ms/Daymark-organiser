@@ -43,8 +43,8 @@ export const TaskItem: React.FC<TaskItemProps> = ({ task, onEdit, showDate = fal
   const project = projects.find((p) => p.id === task.projectId);
   const overdue = isTaskOverdue(task);
 
-  const completedSubtasksCount = task.subtasks.filter((st) => st.completed).length;
-  const totalSubtasksCount = task.subtasks.length;
+  const completedSubtasksCount = (task.subtasks || []).filter((st) => st.completed).length;
+  const totalSubtasksCount = (task.subtasks || []).length;
 
   return (
     <div

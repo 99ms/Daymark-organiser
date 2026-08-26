@@ -18,6 +18,7 @@ export const TaskEditorModal: React.FC<TaskEditorModalProps> = ({
   defaultDate,
 }) => {
   const {
+    tasks,
     addTask,
     updateTask,
     priorities,
@@ -28,6 +29,8 @@ export const TaskEditorModal: React.FC<TaskEditorModalProps> = ({
     toggleSubtask,
     deleteSubtask,
   } = useOrganiser();
+
+  const currentTask = task ? tasks.find((t) => t.id === task.id) || task : null;
 
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
@@ -79,9 +82,9 @@ export const TaskEditorModal: React.FC<TaskEditorModalProps> = ({
 
     const recurrence = hasRecurrence ? { frequency: recFreq } : undefined;
 
-    if (task) {
+    if (currentTask) {
       await updateTask({
-        ...task,
+        ...currentTask,
         title: title.trim(),
         description,
         dueDate,
@@ -117,8 +120,8 @@ export const TaskEditorModal: React.FC<TaskEditorModalProps> = ({
   };
 
   const handleAddSubtaskLocal = async () => {
-    if (!newSubtaskTitle.trim() || !task) return;
-    await addSubtask(task.id, newSubtaskTitle.trim());
+    if (!newSubtaskTitle.trim() || !currentTask) return;
+    await addSubtask(currentTask.id, newSubtaskTitle.trim());
     setNewSubtaskTitle('');
   };
 
@@ -337,13 +340,13 @@ export const TaskEditorModal: React.FC<TaskEditorModalProps> = ({
             </label>
           </div>
 
-          {task && (
+          {currentTask && (
             <div style={{ borderTop: '1px solid var(--border-color)', paddingTop: '0.75rem' }}>
               <label style={{ fontSize: '0.85rem', fontWeight: 600, display: 'block', marginBottom: '0.5rem' }}>
-                SUBTASKS ({task.subtasks.filter((s) => s.completed).length}/{task.subtasks.length})
+                SUBTASKS ({(currentTask.subtasks || []).filter((s) => s.completed).length}/{(currentTask.subtasks || []).length})
               </label>
               <div style={{ display: 'flex', flexDirection: 'column', gap: '0.35rem', marginBottom: '0.5rem' }}>
-                {task.subtasks.map((st) => (
+                {(currentTask.subtasks || []).map((st) => (
                   <div
                     key={st.id}
                     style={{
@@ -359,14 +362,14 @@ export const TaskEditorModal: React.FC<TaskEditorModalProps> = ({
                     <input
                       type="checkbox"
                       checked={st.completed}
-                      onChange={() => toggleSubtask(task.id, st.id)}
+                      onChange={() => toggleSubtask(currentTask.id, st.id)}
                     />
                     <span style={{ flex: 1, textDecoration: st.completed ? 'line-through' : 'none' }}>
                       {st.title}
                     </span>
                     <button
                       type="button"
-                      onClick={() => deleteSubtask(task.id, st.id)}
+                      onClick={() => deleteSubtask(currentTask.id, st.id)}
                       className="btn-icon"
                       style={{ width: 22, height: 22, color: '#ef4444' }}
                     >

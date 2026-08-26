@@ -395,7 +395,7 @@ export const OrganiserProvider: React.FC<{ children: ReactNode }> = ({ children 
     };
     const updated: Task = {
       ...task,
-      subtasks: [...task.subtasks, newSubtask],
+      subtasks: [...(task.subtasks || []), newSubtask],
       updatedAt: new Date().toISOString(),
     };
     setTasks((prev) => prev.map((t) => (t.id === taskId ? updated : t)));
@@ -406,7 +406,7 @@ export const OrganiserProvider: React.FC<{ children: ReactNode }> = ({ children 
     const task = tasks.find((t) => t.id === taskId);
     if (!task) return;
 
-    const updatedSubtasks = task.subtasks.map((st) =>
+    const updatedSubtasks = (task.subtasks || []).map((st) =>
       st.id === subtaskId ? { ...st, completed: !st.completed } : st
     );
     const updated: Task = { ...task, subtasks: updatedSubtasks, updatedAt: new Date().toISOString() };
@@ -418,7 +418,7 @@ export const OrganiserProvider: React.FC<{ children: ReactNode }> = ({ children 
     const task = tasks.find((t) => t.id === taskId);
     if (!task) return;
 
-    const updatedSubtasks = task.subtasks.filter((st) => st.id !== subtaskId);
+    const updatedSubtasks = (task.subtasks || []).filter((st) => st.id !== subtaskId);
     const updated: Task = { ...task, subtasks: updatedSubtasks, updatedAt: new Date().toISOString() };
     setTasks((prev) => prev.map((t) => (t.id === taskId ? updated : t)));
     await saveTaskToDB(updated);
@@ -736,6 +736,13 @@ export const OrganiserProvider: React.FC<{ children: ReactNode }> = ({ children 
           ...t,
           completed,
           completedAt,
+          subtasks: Array.isArray(t.subtasks)
+            ? t.subtasks.map((st) => ({
+                id: st.id || 'sub-' + Date.now() + '-' + Math.random().toString(36).substring(2, 5),
+                title: typeof st.title === 'string' ? st.title : '',
+                completed: !!st.completed,
+              }))
+            : [],
         };
       });
 
