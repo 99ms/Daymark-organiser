@@ -1,5 +1,5 @@
 import type { Task, RecurrenceRule, Priority } from '../types';
-import { addDays, addWeeks, addMonths, format, isAfter } from 'date-fns';
+import { addDays, addWeeks, addMonths, format, isAfter, differenceInCalendarDays } from 'date-fns';
 
 export function parseLocalDate(dateStr: string): Date {
   const [y, m, d] = dateStr.split('-').map(Number);
@@ -203,4 +203,79 @@ export function filterTasks(
 
     return true;
   });
+}
+
+export interface DaysToCalculation {
+  diffDays: number;
+  label: string;
+  sublabel: string;
+  isToday: boolean;
+  isTomorrow: boolean;
+  isPast: boolean;
+}
+
+export function calculateDaysTo(targetDateStr: string, referenceDateStr?: string): DaysToCalculation | null {
+  if (!targetDateStr || !/^\d{4}-\d{2}-\d{2}$/.test(targetDateStr)) {
+    return null;
+  }
+
+  const todayStr = referenceDateStr || format(new Date(), 'yyyy-MM-dd');
+  const targetDate = parseLocalDate(targetDateStr);
+  const todayDate = parseLocalDate(todayStr);
+
+  const diffDays = differenceInCalendarDays(targetDate, todayDate);
+
+  if (diffDays === 0) {
+    return {
+      diffDays: 0,
+      label: 'Today',
+      sublabel: 'Due today',
+      isToday: true,
+      isTomorrow: false,
+      isPast: false,
+    };
+  }
+
+  if (diffDays === 1) {
+    return {
+      diffDays: 1,
+      label: '1 day',
+      sublabel: 'Tomorrow',
+      isToday: false,
+      isTomorrow: true,
+      isPast: false,
+    };
+  }
+
+  if (diffDays > 1) {
+    return {
+      diffDays,
+      label: `${diffDays} days`,
+      sublabel: 'Remaining',
+      isToday: false,
+      isTomorrow: false,
+      isPast: false,
+    };
+  }
+
+  if (diffDays === -1) {
+    return {
+      diffDays: -1,
+      label: 'Passed',
+      sublabel: '1 day ago',
+      isToday: false,
+      isTomorrow: false,
+      isPast: true,
+    };
+  }
+
+  const absDays = Math.abs(diffDays);
+  return {
+    diffDays,
+    label: 'Passed',
+    sublabel: `${absDays} days ago`,
+    isToday: false,
+    isTomorrow: false,
+    isPast: true,
+  };
 }

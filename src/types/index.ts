@@ -145,6 +145,11 @@ export interface CustomTheme {
   tokens: ThemeTokens;
 }
 
+export interface DaysToEvent {
+  title: string;
+  targetDate: string; // YYYY-MM-DD
+}
+
 export interface UserSettings {
   theme: 'light' | 'dark' | 'amoled' | 'system' | string; // supports custom theme IDs
   accentColor: string;
@@ -158,6 +163,7 @@ export interface UserSettings {
   customThemes?: CustomTheme[];
   activeCustomThemeId?: string | null;
   showHeatmapInStats?: boolean;
+  daysToEvent?: DaysToEvent | null;
 }
 
 export interface TaskFilterOptions {

@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useOrganiser } from '../context/OrganiserContext';
 import type { Task, OverviewWidgetConfig } from '../types';
 import { TaskItem } from '../components/TaskItem';
+import { DaysToWidget } from '../components/DaysToWidget';
 import {
   format,
   parseISO,
@@ -71,6 +72,7 @@ const ALL_OVERVIEW_WIDGETS: OverviewWidgetConfig[] = [
   { id: 'recent-notes', visible: false, colSpan: 3, order: 18 },
   { id: 'time-budget', visible: false, colSpan: 3, order: 19 },
   { id: 'inbox-widget', visible: false, colSpan: 3, order: 20 },
+  { id: 'days-to-widget', visible: false, colSpan: 3, order: 21 },
 ];
 
 const DEFAULT_OVERVIEW_LAYOUT: OverviewWidgetConfig[] = ALL_OVERVIEW_WIDGETS;
@@ -96,6 +98,7 @@ const WIDGET_TITLES: Record<string, string> = {
   'recent-notes': 'Recent Notes',
   'time-budget': 'Time Budget',
   'inbox-widget': 'Inbox',
+  'days-to-widget': 'Days To',
 };
 
 export const OverviewView: React.FC<OverviewViewProps> = ({ onEditTask }) => {
@@ -1404,6 +1407,9 @@ export const OverviewView: React.FC<OverviewViewProps> = ({ onEditTask }) => {
           </div>
         );
       }
+
+      case 'days-to-widget':
+        return <DaysToWidget />;
 
       default:
         return null;
