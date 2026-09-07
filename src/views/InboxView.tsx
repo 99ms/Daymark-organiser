@@ -29,7 +29,7 @@ export const InboxView: React.FC<InboxViewProps> = ({ onEditTask }) => {
       >
         <InboxIcon size={24} style={{ color: 'var(--accent-primary)' }} />
         <div>
-          <h2 style={{ fontSize: '1.3rem', fontWeight: 700 }}>Inbox / Quick Capture</h2>
+          <h2 style={{ fontSize: '1.3rem', fontWeight: 700 }}>Quick Tasks</h2>
           <p style={{ fontSize: '0.88rem', color: 'var(--text-secondary)' }}>
             Dump thoughts & tasks quickly without worrying about dates. Organize them later.
           </p>
@@ -38,7 +38,7 @@ export const InboxView: React.FC<InboxViewProps> = ({ onEditTask }) => {
 
       <QuickAddBar
         defaultDueDate=""
-        placeholder='Quick capture to inbox (e.g. "Buy coffee" or "Review proposal tomorrow")'
+        placeholder='Quick capture to Quick Tasks (e.g. "Buy coffee" or "Review proposal tomorrow")'
       />
 
       <div>
@@ -57,7 +57,7 @@ export const InboxView: React.FC<InboxViewProps> = ({ onEditTask }) => {
             }}
           >
             <InboxIcon size={40} style={{ color: 'var(--text-muted)', marginBottom: '0.75rem' }} />
-            <h3 style={{ fontSize: '1.1rem', fontWeight: 600 }}>Inbox is empty</h3>
+            <h3 style={{ fontSize: '1.1rem', fontWeight: 600 }}>Quick Tasks is empty</h3>
             <p style={{ fontSize: '0.88rem', color: 'var(--text-secondary)', marginTop: '0.25rem' }}>
               All captured items are organized!
             </p>

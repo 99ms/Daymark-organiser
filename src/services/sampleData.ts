@@ -64,7 +64,7 @@ export const DEFAULT_TEMPLATES: TaskTemplate[] = [
     description: 'Start the workday aligned and clear-headed.',
     tasks: [
       { title: 'Review top 3 daily priorities', priorityId: 'p-high', categoryId: 'c-work', duration: 10 },
-      { title: 'Clear inbox and update schedule', priorityId: 'p-med', categoryId: 'c-work', duration: 15 },
+      { title: 'Clear Quick Tasks and update schedule', priorityId: 'p-med', categoryId: 'c-work', duration: 15 },
       { title: 'Hydrate & 5-minute stretch', priorityId: 'p-low', categoryId: 'c-fitness', duration: 5 },
     ],
   },
@@ -74,7 +74,7 @@ export const DEFAULT_NOTES: Note[] = [
   {
     id: 'n-onboarding',
     title: 'Welcome Note & Keyboard Shortcuts',
-    content: 'Daymark is built for fast, minimal friction planning.\n\nQuick Hotkeys:\n- N : Create new task (Quick Add)\n- F : Toggle Focus Mode\n- D : Open Day View\n- I : Open Inbox\n- Ctrl + K : Global Search',
+    content: 'Daymark is built for fast, minimal friction planning.\n\nQuick Hotkeys:\n- N : Create new task (Quick Add)\n- F : Toggle Focus Mode\n- D : Open Day View\n- I : Open Quick Tasks\n- Ctrl + K : Global Search',
     categoryId: 'c-onboarding',
     projectId: 'proj-onboarding',
     createdAt: today,

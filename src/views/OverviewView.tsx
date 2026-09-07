@@ -97,7 +97,7 @@ const WIDGET_TITLES: Record<string, string> = {
   'productivity-trend': 'Productivity Trend',
   'recent-notes': 'Recent Notes',
   'time-budget': 'Time Budget',
-  'inbox-widget': 'Inbox',
+  'inbox-widget': 'Quick Tasks',
   'days-to-widget': 'Days To',
 };
 
@@ -763,7 +763,7 @@ export const OverviewView: React.FC<OverviewViewProps> = ({ onEditTask }) => {
                   <span style={{ color: 'var(--text-muted)', fontWeight: 700 }}>D</span>
                 </div>
                 <div onClick={() => setCurrentView('inbox')} style={{ display: 'flex', justifyContent: 'space-between', fontSize: 'var(--font-base)', color: 'var(--text-secondary)', cursor: 'pointer' }}>
-                  <span>📥 Open inbox</span>
+                  <span>📥 Open Quick Tasks</span>
                   <span style={{ color: 'var(--text-muted)', fontWeight: 700 }}>I</span>
                 </div>
               </div>
@@ -1374,7 +1374,7 @@ export const OverviewView: React.FC<OverviewViewProps> = ({ onEditTask }) => {
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                   <Inbox size={20} style={{ color: 'var(--accent-primary)' }} />
-                  <span style={{ fontSize: 'var(--font-lg)', fontWeight: 700, color: 'var(--text-primary)' }}>Inbox</span>
+                  <span style={{ fontSize: 'var(--font-lg)', fontWeight: 700, color: 'var(--text-primary)' }}>Quick Tasks</span>
                 </div>
                 <span style={{ fontSize: 'var(--font-xs)', fontWeight: 700, color: 'var(--accent-primary)', backgroundColor: 'var(--accent-light)', padding: '0.2rem 0.5rem', borderRadius: 'var(--radius-full)' }}>
                   {inboxTasks.length} Unscheduled
@@ -1383,7 +1383,7 @@ export const OverviewView: React.FC<OverviewViewProps> = ({ onEditTask }) => {
 
               {inboxTasks.length === 0 ? (
                 <div style={{ fontSize: 'var(--font-sm)', color: 'var(--text-muted)', fontStyle: 'italic', padding: '1rem 0', textAlign: 'center' }}>
-                  Inbox is clear! All tasks are scheduled.
+                  Quick Tasks is clear! All tasks are scheduled.
                 </div>
               ) : (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
@@ -1401,7 +1401,7 @@ export const OverviewView: React.FC<OverviewViewProps> = ({ onEditTask }) => {
                 onClick={() => setCurrentView('inbox')}
                 style={{ fontSize: 'var(--font-sm)', color: 'var(--accent-primary)', fontWeight: 600, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.35rem' }}
               >
-                Open full Inbox <ArrowRight size={14} />
+                Open Quick Tasks <ArrowRight size={14} />
               </span>
             </div>
           </div>

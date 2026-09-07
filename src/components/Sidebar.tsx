@@ -43,7 +43,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ onOpenNewTaskModal }) => {
     { view: 'day', label: 'Day View', icon: <CalendarDays size={18} /> },
     { view: 'week', label: 'Week View', icon: <Columns3 size={18} /> },
     { view: 'month', label: 'Month View', icon: <Calendar size={18} /> },
-    { view: 'inbox', label: 'Inbox', icon: <Inbox size={18} />, badge: inboxCount },
+    { view: 'inbox', label: 'Quick Tasks', icon: <Inbox size={18} />, badge: inboxCount },
     { view: 'projects', label: 'Projects', icon: <FolderKanban size={18} /> },
     { view: 'goals', label: 'Goals', icon: <Target size={18} /> },
     { view: 'notes', label: 'Notes', icon: <FileText size={18} /> },
