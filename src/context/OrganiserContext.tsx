@@ -35,10 +35,10 @@ import {
   restoreSafetySnapshot,
 } from '../services/db';
 import type { SafetySnapshot } from '../services/db';
-import { getNextRecurrenceDate, parseNaturalLanguageTask } from '../utils/taskUtils';
+import { getNextRecurrenceDate, parseNaturalLanguageTask, parseLocalDate } from '../utils/taskUtils';
 import { applyThemeTokens, clearCustomThemeTokens } from '../utils/themeUtils';
 import { DEFAULT_CATEGORIES, DEFAULT_PROJECTS, SAMPLE_TASKS } from '../services/sampleData';
-import { format } from 'date-fns';
+import { format, startOfWeek, startOfMonth } from 'date-fns';
 
 interface OrganiserContextType {
   currentView: ViewMode;
@@ -148,6 +148,54 @@ export const OrganiserProvider: React.FC<{ children: ReactNode }> = ({ children 
     async function init() {
       try {
         const data = await initializeDatabaseWithSeedData();
+        // Phase 9.2: Goal Rollover Engine
+        const todayStr = format(new Date(), 'yyyy-MM-dd');
+        const todayDate = parseLocalDate(todayStr);
+        let goalsChanged = false;
+
+        const rolledOverGoals = data.goals.map((g) => {
+          if (!g.periodStart) return g;
+          let rolledOver = false;
+          let newPeriodStart = todayStr;
+          const periodStartDate = parseLocalDate(g.periodStart);
+
+          if (g.type === 'daily') {
+            if (g.periodStart < todayStr) rolledOver = true;
+          } else if (g.type === 'weekly') {
+            const gWeekStart = startOfWeek(periodStartDate, { weekStartsOn: data.settings.startOfWeek });
+            const currentWeekStart = startOfWeek(todayDate, { weekStartsOn: data.settings.startOfWeek });
+            if (gWeekStart < currentWeekStart) {
+              rolledOver = true;
+              newPeriodStart = format(currentWeekStart, 'yyyy-MM-dd');
+            }
+          } else if (g.type === 'monthly') {
+            const gMonthStart = startOfMonth(periodStartDate);
+            const currentMonthStart = startOfMonth(todayDate);
+            if (gMonthStart < currentMonthStart) {
+              rolledOver = true;
+              newPeriodStart = format(currentMonthStart, 'yyyy-MM-dd');
+            }
+          }
+
+          if (rolledOver) {
+            goalsChanged = true;
+            return {
+              ...g,
+              currentCount: 0,
+              completed: false,
+              periodStart: newPeriodStart
+            };
+          }
+          return g;
+        });
+
+        if (goalsChanged) {
+          data.goals = rolledOverGoals;
+          for (const g of rolledOverGoals) {
+            await saveGoalToDB(g);
+          }
+        }
+
         setTasks(data.tasks);
         setPriorities(data.priorities);
         setCategories(data.categories);
@@ -353,10 +401,50 @@ export const OrganiserProvider: React.FC<{ children: ReactNode }> = ({ children 
         }
       );
     } else {
-      addToast(newCompleted ? 'Task marked complete' : 'Task uncompleted', 'success', async () => {
-        setTasks((prev) => prev.map((t) => (t.id === id ? task : t)));
+      // Phase 9.2: Recurrence Cleanup Engine
+      let futureOrphanId: string | null = null;
+      let orphan: Task | undefined;
+
+      if (task.recurrence) {
+        const nextDate = getNextRecurrenceDate(task.dueDate, task.recurrence);
+        if (nextDate) {
+          orphan = tasks.find(
+            (t) =>
+              !t.archived &&
+              !t.completed &&
+              t.title === task.title &&
+              t.dueDate === nextDate &&
+              t.projectId === task.projectId
+          );
+          if (orphan) {
+            futureOrphanId = orphan.id;
+          }
+        }
+      }
+
+      const toastMessage = futureOrphanId
+        ? 'Task uncompleted. Future occurrence removed.'
+        : (newCompleted ? 'Task marked complete' : 'Task uncompleted');
+
+      addToast(toastMessage, 'success', async () => {
+        // Undo action just reverts the parent task state
+        setTasks((prev) => {
+          let list = prev.map((t) => (t.id === id ? task : t));
+          if (orphan && !list.some((t) => t.id === orphan!.id)) {
+            list = [orphan, ...list];
+          }
+          return list;
+        });
         await saveTaskToDB(task);
+        if (orphan) {
+          await saveTaskToDB(orphan);
+        }
       });
+
+      if (futureOrphanId) {
+        setTasks((prev) => prev.filter((t) => t.id !== futureOrphanId));
+        await deleteTaskFromDB(futureOrphanId);
+      }
     }
   };
 
