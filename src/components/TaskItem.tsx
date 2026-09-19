@@ -35,6 +35,7 @@ export const TaskItem: React.FC<TaskItemProps> = ({ task, onEdit, showDate = fal
     categories,
     projects,
     rescheduleTask,
+    toggleSubtask,
   } = useOrganiser();
 
   const [expanded, setExpanded] = useState(false);
@@ -189,8 +190,38 @@ export const TaskItem: React.FC<TaskItemProps> = ({ task, onEdit, showDate = fal
       {expanded && (
         <div className="task-expanded-panel" onClick={(e) => e.stopPropagation()}>
           {task.description && (
-            <div style={{ color: 'var(--text-secondary)', fontSize: 'var(--font-base)', lineHeight: 1.5 }}>
+            <div style={{ color: 'var(--text-secondary)', fontSize: 'var(--font-base)', lineHeight: 1.5, marginBottom: '0.75rem' }}>
               {task.description}
+            </div>
+          )}
+
+          {totalSubtasksCount > 0 && (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', marginBottom: '1rem', marginTop: task.description ? '0' : '0.5rem' }}>
+              {(task.subtasks || []).map((st) => (
+                <label
+                  key={st.id}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '0.5rem',
+                    fontSize: 'var(--font-sm)',
+                    color: st.completed ? 'var(--text-muted)' : 'var(--text-primary)',
+                    textDecoration: st.completed ? 'line-through' : 'none',
+                    cursor: 'pointer',
+                    width: 'fit-content'
+                  }}
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  <input
+                    type="checkbox"
+                    checked={st.completed}
+                    onChange={() => toggleSubtask(task.id, st.id)}
+                    style={{ cursor: 'pointer', margin: 0 }}
+                    aria-label={`Toggle subtask: ${st.title}`}
+                  />
+                  <span>{st.title}</span>
+                </label>
+              ))}
             </div>
           )}
 
