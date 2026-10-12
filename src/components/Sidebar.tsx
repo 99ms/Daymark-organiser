@@ -110,7 +110,8 @@ export const Sidebar: React.FC<SidebarProps> = ({ onOpenNewTaskModal }) => {
 
         <nav className="sidebar-nav">
           {!collapsed && overdueCount > 0 && (
-            <div
+            <button
+              type="button"
               onClick={() => {
                 setCurrentView('today');
                 setSelectedDate(todayStr);
@@ -118,16 +119,19 @@ export const Sidebar: React.FC<SidebarProps> = ({ onOpenNewTaskModal }) => {
               }}
               className="nav-item"
               style={{
+                width: '100%',
                 backgroundColor: 'rgba(239, 68, 68, 0.1)',
                 color: '#ef4444',
                 cursor: 'pointer',
                 fontWeight: 600,
+                textAlign: 'left',
               }}
+              aria-label={`View ${overdueCount} overdue tasks`}
             >
               <Flame size={18} />
               <span>Overdue Tasks</span>
               <span className="nav-badge alert">{overdueCount}</span>
-            </div>
+            </button>
           )}
 
           {!collapsed && <div className="nav-section-title">Views</div>}

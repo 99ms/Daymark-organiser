@@ -34,12 +34,17 @@ const AppContent: React.FC = () => {
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      const activeTag = document.activeElement?.tagName.toLowerCase();
-      if (activeTag === 'input' || activeTag === 'textarea' || activeTag === 'select') {
+      // If a modal is open, let the modal trap handle focus/escape and prevent background navigation shortcuts
+      if (isTaskModalOpen || isShortcutsOpen) {
         if (e.key === 'Escape') {
           setIsTaskModalOpen(false);
           setIsShortcutsOpen(false);
         }
+        return;
+      }
+
+      const activeTag = document.activeElement?.tagName.toLowerCase();
+      if (activeTag === 'input' || activeTag === 'textarea' || activeTag === 'select') {
         return;
       }
 
@@ -94,7 +99,7 @@ const AppContent: React.FC = () => {
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [setCurrentView, setSelectedDate]);
+  }, [setCurrentView, setSelectedDate, isTaskModalOpen, isShortcutsOpen]);
 
   const handleOpenNewTask = (dateStr?: string) => {
     setEditingTask(null);

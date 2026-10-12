@@ -1,5 +1,6 @@
 import React from 'react';
 import { X, Command } from 'lucide-react';
+import { useModalFocus } from '../utils/useModalFocus';
 
 interface KeyboardShortcutsModalProps {
   isOpen: boolean;
@@ -7,6 +8,8 @@ interface KeyboardShortcutsModalProps {
 }
 
 export const KeyboardShortcutsModal: React.FC<KeyboardShortcutsModalProps> = ({ isOpen, onClose }) => {
+  const modalRef = useModalFocus({ isOpen, onClose });
+
   if (!isOpen) return null;
 
   const shortcuts = [
@@ -23,13 +26,23 @@ export const KeyboardShortcutsModal: React.FC<KeyboardShortcutsModalProps> = ({ 
 
   return (
     <div className="modal-overlay" onClick={onClose}>
-      <div className="modal-card" onClick={(e) => e.stopPropagation()}>
+      <div
+        ref={modalRef}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="keyboard-shortcuts-title"
+        tabIndex={-1}
+        className="modal-card"
+        onClick={(e) => e.stopPropagation()}
+      >
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
             <Command size={20} style={{ color: 'var(--accent-primary)' }} />
-            <h2 style={{ fontSize: '1.2rem', fontWeight: 700 }}>Keyboard Shortcuts</h2>
+            <h2 id="keyboard-shortcuts-title" style={{ fontSize: '1.2rem', fontWeight: 700 }}>
+              Keyboard Shortcuts
+            </h2>
           </div>
-          <button onClick={onClose} className="btn-icon">
+          <button onClick={onClose} className="btn-icon" title="Close dialog" aria-label="Close dialog">
             <X size={18} />
           </button>
         </div>

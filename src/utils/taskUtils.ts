@@ -65,6 +65,7 @@ export interface ParsedQuickAdd {
   dueDate: string;
   dueTime?: string;
   priorityId?: string;
+  tags: string[];
 }
 
 export function parseNaturalLanguageTask(
@@ -77,6 +78,29 @@ export function parseNaturalLanguageTask(
   let dueDate = defaultDueDate !== undefined ? defaultDueDate : format(new Date(), 'yyyy-MM-dd');
   let dueTime: string | undefined = undefined;
   let matchedPriorityId: string | undefined = undefined;
+  const tags: string[] = [];
+
+  // Extract hashtags: #tag, #tag_name, #tag-1, #café
+  // Avoid matching in URLs (e.g. https://...#section) or email addresses
+  const tagRegex = /(?:^|\s)#([\p{L}\p{N}_-]+)(?=\s|$|[.,!?;:])/gu;
+  const rawTags: string[] = [];
+  let tagMatch: RegExpExecArray | null;
+  while ((tagMatch = tagRegex.exec(workingText)) !== null) {
+    rawTags.push(tagMatch[1].toLowerCase());
+  }
+
+  if (rawTags.length > 0) {
+    // Deduplicate tags while preserving lowercase canonical form
+    for (const t of rawTags) {
+      if (!tags.includes(t)) {
+        tags.push(t);
+      }
+    }
+    // Remove extracted hashtag tokens from title while preserving surrounding punctuation
+    workingText = workingText
+      .replace(/(^|\s)#[\p{L}\p{N}_-]+(?=\s|$|[.,!?;:])/gu, '$1')
+      .trim();
+  }
 
   for (const p of priorities) {
     const lowerPName = p.name.toLowerCase();
@@ -88,25 +112,32 @@ export function parseNaturalLanguageTask(
     }
   }
 
-  if (/\b(today|td)\b/i.test(workingText)) {
+  // Date parsing: Only match unambiguous date expressions.
+  // Destructive 2/3 letter abbreviations ('td', 'tmw') are excluded to prevent corrupting
+  // words like "TD Bank", "Touchdown", or "TMW".
+  if (/\b(today)\b/i.test(workingText)) {
     dueDate = format(new Date(), 'yyyy-MM-dd');
-    workingText = workingText.replace(/\b(today|td)\b/i, '').trim();
-  } else if (/\b(tomorrow|tmr|tmw)\b/i.test(workingText)) {
+    workingText = workingText.replace(/\b(today)\b/i, '').trim();
+  } else if (/\b(tomorrow|tmr)\b/i.test(workingText)) {
     dueDate = format(addDays(new Date(), 1), 'yyyy-MM-dd');
-    workingText = workingText.replace(/\b(tomorrow|tmr|tmw)\b/i, '').trim();
+    workingText = workingText.replace(/\b(tomorrow|tmr)\b/i, '').trim();
   } else if (/\bnext\s+week\b/i.test(workingText)) {
     dueDate = format(addDays(new Date(), 7), 'yyyy-MM-dd');
     workingText = workingText.replace(/\bnext\s+week\b/i, '').trim();
   }
 
+  // Time parsing:
+  // Require explicit "at <time>" or an "am/pm" marker (e.g. "at 4", "at 4:30", "4pm", "4:30pm").
+  // Bare colon numbers like "3:16" or "2:1" without "at" or "am/pm" are NOT parsed as times
+  // so ordinary section numbers, chapter verses, ratios, and scores remain intact.
   const timeRegex = /\b(?:at\s+)?(\d{1,2})(?::(\d{2}))?\s*(am|pm)?\b/i;
   const timeMatch = workingText.match(timeRegex);
   if (timeMatch) {
-    const hasAt = /\bat\s+\d/i.test(workingText);
+    // Check if the actual matched token starts with "at" (case-insensitive)
+    const hasAt = /^at\s+/i.test(timeMatch[0]);
     const hasAmPm = !!timeMatch[3];
-    const hasColon = !!timeMatch[2];
 
-    if (hasAt || hasAmPm || hasColon) {
+    if (hasAt || hasAmPm) {
       let hours = parseInt(timeMatch[1], 10);
       const minutes = timeMatch[2] ? parseInt(timeMatch[2], 10) : 0;
       const ampm = timeMatch[3] ? timeMatch[3].toLowerCase() : null;
@@ -128,6 +159,7 @@ export function parseNaturalLanguageTask(
     dueDate,
     dueTime,
     priorityId: matchedPriorityId || defaultPriorityId,
+    tags,
   };
 }
 

@@ -1,8 +1,9 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useOrganiser } from '../context/OrganiserContext';
 import type { Task, RecurrenceFrequency, ReminderType } from '../types';
 import { X, Calendar, Clock, Tag, Repeat, Bell, Flag, Folder, Trash2, Plus } from 'lucide-react';
 import { format } from 'date-fns';
+import { useModalFocus } from '../utils/useModalFocus';
 
 interface TaskEditorModalProps {
   task: Task | null;
@@ -17,6 +18,8 @@ export const TaskEditorModal: React.FC<TaskEditorModalProps> = ({
   onClose,
   defaultDate,
 }) => {
+  const titleInputRef = useRef<HTMLInputElement>(null);
+  const modalRef = useModalFocus({ isOpen, onClose, initialFocusRef: titleInputRef });
   const {
     tasks,
     addTask,
@@ -75,10 +78,16 @@ export const TaskEditorModal: React.FC<TaskEditorModalProps> = ({
     e.preventDefault();
     if (!title.trim()) return;
 
-    const parsedTags = tagsInput
+    const parsedTags: string[] = [];
+    tagsInput
       .split(',')
-      .map((t) => t.trim().replace(/^#/, ''))
-      .filter(Boolean);
+      .map((t) => t.trim().replace(/^#/, '').toLowerCase())
+      .filter(Boolean)
+      .forEach((t) => {
+        if (!parsedTags.includes(t)) {
+          parsedTags.push(t);
+        }
+      });
 
     const recurrence = hasRecurrence ? { frequency: recFreq } : undefined;
 
@@ -127,37 +136,47 @@ export const TaskEditorModal: React.FC<TaskEditorModalProps> = ({
 
   return (
     <div className="modal-overlay" onClick={onClose}>
-      <div className="modal-card" onClick={(e) => e.stopPropagation()}>
+      <div
+        ref={modalRef}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="task-editor-dialog-title"
+        tabIndex={-1}
+        className="modal-card"
+        onClick={(e) => e.stopPropagation()}
+      >
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-          <h2 style={{ fontSize: '1.25rem', fontWeight: 600 }}>
+          <h2 id="task-editor-dialog-title" style={{ fontSize: '1.25rem', fontWeight: 600 }}>
             {task ? 'Edit Task' : 'Create New Task'}
           </h2>
-          <button onClick={onClose} className="btn-icon">
+          <button onClick={onClose} className="btn-icon" title="Close dialog" aria-label="Close dialog">
             <X size={18} />
           </button>
         </div>
 
         <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
           <div>
-            <label style={{ fontSize: '0.82rem', color: 'var(--text-secondary)', fontWeight: 600 }}>
+            <label htmlFor="task-edit-title" style={{ fontSize: '0.82rem', color: 'var(--text-secondary)', fontWeight: 600 }}>
               TASK TITLE *
             </label>
             <input
+              ref={titleInputRef}
+              id="task-edit-title"
               type="text"
               placeholder="e.g. Finish quarterly presentation"
               value={title}
               onChange={(e) => setTitle(e.target.value)}
               required
-              autoFocus
               style={{ width: '100%', marginTop: '0.25rem' }}
             />
           </div>
 
           <div>
-            <label style={{ fontSize: '0.82rem', color: 'var(--text-secondary)', fontWeight: 600 }}>
+            <label htmlFor="task-edit-description" style={{ fontSize: '0.82rem', color: 'var(--text-secondary)', fontWeight: 600 }}>
               DESCRIPTION
             </label>
             <textarea
+              id="task-edit-description"
               rows={2}
               placeholder="Add details, links, or context..."
               value={description}
@@ -168,10 +187,11 @@ export const TaskEditorModal: React.FC<TaskEditorModalProps> = ({
 
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '0.75rem' }}>
             <div>
-              <label style={{ fontSize: '0.82rem', color: 'var(--text-secondary)', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
+              <label htmlFor="task-edit-due-date" style={{ fontSize: '0.82rem', color: 'var(--text-secondary)', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
                 <Calendar size={14} /> DUE DATE
               </label>
               <input
+                id="task-edit-due-date"
                 type="date"
                 value={dueDate}
                 onChange={(e) => setDueDate(e.target.value)}
@@ -180,10 +200,11 @@ export const TaskEditorModal: React.FC<TaskEditorModalProps> = ({
             </div>
 
             <div>
-              <label style={{ fontSize: '0.82rem', color: 'var(--text-secondary)', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
+              <label htmlFor="task-edit-due-time" style={{ fontSize: '0.82rem', color: 'var(--text-secondary)', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
                 <Clock size={14} /> DUE TIME
               </label>
               <input
+                id="task-edit-due-time"
                 type="time"
                 value={dueTime}
                 onChange={(e) => setDueTime(e.target.value)}
@@ -192,10 +213,11 @@ export const TaskEditorModal: React.FC<TaskEditorModalProps> = ({
             </div>
 
             <div>
-              <label style={{ fontSize: '0.82rem', color: 'var(--text-secondary)', fontWeight: 600 }}>
+              <label htmlFor="task-edit-duration" style={{ fontSize: '0.82rem', color: 'var(--text-secondary)', fontWeight: 600 }}>
                 EST. DURATION (MINS)
               </label>
               <input
+                id="task-edit-duration"
                 type="number"
                 min={5}
                 step={5}
@@ -208,10 +230,11 @@ export const TaskEditorModal: React.FC<TaskEditorModalProps> = ({
 
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
             <div>
-              <label style={{ fontSize: '0.82rem', color: 'var(--text-secondary)', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
+              <label htmlFor="task-edit-priority" style={{ fontSize: '0.82rem', color: 'var(--text-secondary)', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
                 <Flag size={14} /> PRIORITY
               </label>
               <select
+                id="task-edit-priority"
                 value={priorityId}
                 onChange={(e) => setPriorityId(e.target.value)}
                 style={{ width: '100%', marginTop: '0.25rem' }}
@@ -225,10 +248,11 @@ export const TaskEditorModal: React.FC<TaskEditorModalProps> = ({
             </div>
 
             <div>
-              <label style={{ fontSize: '0.82rem', color: 'var(--text-secondary)', fontWeight: 600 }}>
+              <label htmlFor="task-edit-category" style={{ fontSize: '0.82rem', color: 'var(--text-secondary)', fontWeight: 600 }}>
                 CATEGORY
               </label>
               <select
+                id="task-edit-category"
                 value={categoryId}
                 onChange={(e) => setCategoryId(e.target.value)}
                 style={{ width: '100%', marginTop: '0.25rem' }}
@@ -244,10 +268,11 @@ export const TaskEditorModal: React.FC<TaskEditorModalProps> = ({
 
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
             <div>
-              <label style={{ fontSize: '0.82rem', color: 'var(--text-secondary)', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
+              <label htmlFor="task-edit-project" style={{ fontSize: '0.82rem', color: 'var(--text-secondary)', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
                 <Folder size={14} /> PROJECT
               </label>
               <select
+                id="task-edit-project"
                 value={projectId}
                 onChange={(e) => setProjectId(e.target.value)}
                 style={{ width: '100%', marginTop: '0.25rem' }}
@@ -262,10 +287,11 @@ export const TaskEditorModal: React.FC<TaskEditorModalProps> = ({
             </div>
 
             <div>
-              <label style={{ fontSize: '0.82rem', color: 'var(--text-secondary)', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
+              <label htmlFor="task-edit-tags" style={{ fontSize: '0.82rem', color: 'var(--text-secondary)', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
                 <Tag size={14} /> TAGS (comma separated)
               </label>
               <input
+                id="task-edit-tags"
                 type="text"
                 placeholder="design, work, urgent"
                 value={tagsInput}
@@ -278,6 +304,7 @@ export const TaskEditorModal: React.FC<TaskEditorModalProps> = ({
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
             <div>
               <label
+                htmlFor="task-edit-recurrence-check"
                 style={{
                   fontSize: '0.82rem',
                   color: 'var(--text-secondary)',
@@ -285,9 +312,11 @@ export const TaskEditorModal: React.FC<TaskEditorModalProps> = ({
                   display: 'flex',
                   alignItems: 'center',
                   gap: '0.5rem',
+                  cursor: 'pointer',
                 }}
               >
                 <input
+                  id="task-edit-recurrence-check"
                   type="checkbox"
                   checked={hasRecurrence}
                   onChange={(e) => setHasRecurrence(e.target.checked)}
@@ -296,6 +325,8 @@ export const TaskEditorModal: React.FC<TaskEditorModalProps> = ({
               </label>
               {hasRecurrence && (
                 <select
+                  id="task-edit-recurrence-freq"
+                  aria-label="Recurrence frequency"
                   value={recFreq}
                   onChange={(e) => setRecFreq(e.target.value as RecurrenceFrequency)}
                   style={{ width: '100%', marginTop: '0.25rem' }}
@@ -309,10 +340,11 @@ export const TaskEditorModal: React.FC<TaskEditorModalProps> = ({
             </div>
 
             <div>
-              <label style={{ fontSize: '0.82rem', color: 'var(--text-secondary)', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
+              <label htmlFor="task-edit-reminder" style={{ fontSize: '0.82rem', color: 'var(--text-secondary)', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
                 <Bell size={14} /> REMINDER
               </label>
               <select
+                id="task-edit-reminder"
                 value={reminder}
                 onChange={(e) => setReminder(e.target.value as ReminderType)}
                 style={{ width: '100%', marginTop: '0.25rem' }}
@@ -363,6 +395,7 @@ export const TaskEditorModal: React.FC<TaskEditorModalProps> = ({
                       type="checkbox"
                       checked={st.completed}
                       onChange={() => toggleSubtask(currentTask.id, st.id)}
+                      aria-label={`Toggle subtask "${st.title}"`}
                     />
                     <span style={{ flex: 1, textDecoration: st.completed ? 'line-through' : 'none' }}>
                       {st.title}
@@ -372,6 +405,8 @@ export const TaskEditorModal: React.FC<TaskEditorModalProps> = ({
                       onClick={() => deleteSubtask(currentTask.id, st.id)}
                       className="btn-icon"
                       style={{ width: 22, height: 22, color: '#ef4444' }}
+                      title={`Delete subtask "${st.title}"`}
+                      aria-label={`Delete subtask "${st.title}"`}
                     >
                       <Trash2 size={12} />
                     </button>
@@ -380,6 +415,8 @@ export const TaskEditorModal: React.FC<TaskEditorModalProps> = ({
               </div>
               <div style={{ display: 'flex', gap: '0.5rem' }}>
                 <input
+                  id="task-new-subtask-input"
+                  aria-label="Add a subtask"
                   type="text"
                   placeholder="Add a subtask..."
                   value={newSubtaskTitle}
@@ -392,7 +429,7 @@ export const TaskEditorModal: React.FC<TaskEditorModalProps> = ({
                   }}
                   style={{ flex: 1 }}
                 />
-                <button type="button" onClick={handleAddSubtaskLocal} className="btn btn-secondary">
+                <button type="button" onClick={handleAddSubtaskLocal} className="btn btn-secondary" aria-label="Add subtask to task">
                   <Plus size={16} /> Add
                 </button>
               </div>

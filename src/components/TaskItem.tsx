@@ -63,6 +63,7 @@ export const TaskItem: React.FC<TaskItemProps> = ({ task, onEdit, showDate = fal
           }}
           className={`task-checkbox ${task.completed ? 'checked' : ''}`}
           title={task.completed ? 'Mark uncompleted' : 'Mark complete'}
+          aria-label={task.completed ? `Mark "${task.title}" as uncompleted` : `Mark "${task.title}" as complete`}
         >
           {task.completed && <Check size={15} strokeWidth={3} />}
         </button>
@@ -121,6 +122,7 @@ export const TaskItem: React.FC<TaskItemProps> = ({ task, onEdit, showDate = fal
             className="btn-icon"
             style={{ width: 34, height: 34, color: task.isTopPriority ? '#f59e0b' : 'var(--text-muted)' }}
             title={task.isTopPriority ? 'Remove Top Priority' : 'Set as Top Priority'}
+            aria-label={task.isTopPriority ? `Remove top priority from "${task.title}"` : `Set "${task.title}" as top priority`}
           >
             <Star size={18} fill={task.isTopPriority ? '#f59e0b' : 'none'} />
           </button>
@@ -131,6 +133,7 @@ export const TaskItem: React.FC<TaskItemProps> = ({ task, onEdit, showDate = fal
               className="btn btn-secondary"
               style={{ padding: '0.35rem 0.75rem', fontSize: 'var(--font-sm)', color: '#ef4444', minHeight: '34px' }}
               title="Move overdue task to today"
+              aria-label={`Move overdue task "${task.title}" to today`}
             >
               Move to Today
             </button>
@@ -141,6 +144,7 @@ export const TaskItem: React.FC<TaskItemProps> = ({ task, onEdit, showDate = fal
             className="btn-icon"
             style={{ width: 34, height: 34 }}
             title="Edit task"
+            aria-label={`Edit task "${task.title}"`}
           >
             <Edit2 size={16} />
           </button>
@@ -151,7 +155,7 @@ export const TaskItem: React.FC<TaskItemProps> = ({ task, onEdit, showDate = fal
               className="btn-icon"
               style={{ width: 34, height: 34, color: 'var(--accent-primary)' }}
               title="Restore task to active views"
-              aria-label="Restore task to active views"
+              aria-label={`Restore task "${task.title}" to active views`}
             >
               <ArchiveRestore size={16} />
             </button>
@@ -161,7 +165,7 @@ export const TaskItem: React.FC<TaskItemProps> = ({ task, onEdit, showDate = fal
               className="btn-icon"
               style={{ width: 34, height: 34, color: 'var(--text-muted)' }}
               title="Archive task"
-              aria-label="Archive task"
+              aria-label={`Archive task "${task.title}"`}
             >
               <Archive size={16} />
             </button>
@@ -172,6 +176,7 @@ export const TaskItem: React.FC<TaskItemProps> = ({ task, onEdit, showDate = fal
             className="btn-icon"
             style={{ width: 34, height: 34, color: '#ef4444' }}
             title="Delete task"
+            aria-label={`Delete task "${task.title}"`}
           >
             <Trash2 size={16} />
           </button>
@@ -180,6 +185,10 @@ export const TaskItem: React.FC<TaskItemProps> = ({ task, onEdit, showDate = fal
             onClick={() => setExpanded(!expanded)}
             className="btn-icon"
             style={{ width: 30, height: 30 }}
+            title={expanded ? 'Collapse task details' : 'Expand task details'}
+            aria-label={expanded ? `Collapse details for "${task.title}"` : `Expand details for "${task.title}"`}
+            aria-expanded={expanded}
+            aria-controls={`task-expanded-${task.id}`}
           >
             {expanded ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
           </button>
@@ -188,7 +197,7 @@ export const TaskItem: React.FC<TaskItemProps> = ({ task, onEdit, showDate = fal
 
       {/* Expanded Progressive Disclosure Panel */}
       {expanded && (
-        <div className="task-expanded-panel" onClick={(e) => e.stopPropagation()}>
+        <div id={`task-expanded-${task.id}`} className="task-expanded-panel" onClick={(e) => e.stopPropagation()}>
           {task.description && (
             <div style={{ color: 'var(--text-secondary)', fontSize: 'var(--font-base)', lineHeight: 1.5, marginBottom: '0.75rem' }}>
               {task.description}

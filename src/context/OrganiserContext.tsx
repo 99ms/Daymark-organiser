@@ -293,6 +293,7 @@ export const OrganiserProvider: React.FC<{ children: ReactNode }> = ({ children 
       dueDate: parsed.dueDate,
       dueTime: parsed.dueTime,
       priorityId: parsed.priorityId,
+      tags: parsed.tags,
     });
   };
 
