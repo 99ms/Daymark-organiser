@@ -5,6 +5,20 @@ All notable changes to the Daymark Organiser project will be documented in this 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.2.0-beta.3] - 2026-10-12
+
+### Added
+- **Modal Focus Management & Dialog Semantics**: Reusable focus management hook (`useModalFocus`) providing automatic initial focus, focus trapping (Tab/Shift+Tab), Escape dismissal, and focus restoration to the trigger element upon close across `TaskEditorModal` and `KeyboardShortcutsModal`.
+- **Hashtag Tokenizer & Tag Extraction**: Natural-language quick task capture now extracts `#tag` patterns, normalizes case, deduplicates entries, and attaches them directly to task tags.
+- **Accessible Task Controls**: Descriptive, task-specific `aria-label`s on task checkboxes, star toggles, edit, archive, restore, and delete buttons, plus `aria-expanded` and `aria-controls` for progressive disclosure panels.
+- **Form Control Associations**: Explicit `htmlFor` and unique `id` pairings across all fields in the task editor, including subtask toggles and delete controls.
+- **Semantic Navigation Elements**: Upgraded the sidebar overdue banner from a clickable div to a semantic `<button type="button">` with native keyboard accessibility.
+
+### Improved
+- **Natural-Language Time & Date Parsing**: Hardened time token detection by strictly requiring explicit `at` prefixes or AM/PM markers and tying context directly to the matched token, preserving colon-separated numbers like ratios, scores, and chapter verses (`2:1`, `3:16`) without accidental time extraction.
+- **Date Token Disambiguation**: Excluded aggressive 2/3 letter shorthands (`td`, `tmw`) from natural-language date parsing to prevent corrupting legitimate English text.
+- **Global Shortcut Suppression**: Prevented background keyboard shortcuts (such as `Ctrl+K` and view-switching hotkeys) from firing while modal dialogs are active.
+
 ## [0.2.0-beta.2] - 2026-08-26
 
 ### Added
