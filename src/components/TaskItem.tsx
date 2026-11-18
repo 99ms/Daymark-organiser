@@ -17,6 +17,7 @@ import {
 } from 'lucide-react';
 import { isTaskOverdue } from '../utils/taskUtils';
 import { format } from 'date-fns';
+import { TaskTimerControls } from './TaskTimerControls';
 
 interface TaskItemProps {
   task: Task;
@@ -112,6 +113,9 @@ export const TaskItem: React.FC<TaskItemProps> = ({ task, onEdit, showDate = fal
                 {priority.name}
               </span>
             )}
+
+            {/* Task-Level Timed Tasks Control */}
+            <TaskTimerControls task={task} />
           </div>
         </div>
 

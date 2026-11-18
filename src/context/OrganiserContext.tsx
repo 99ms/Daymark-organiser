@@ -11,7 +11,15 @@ import type {
   UserSettings,
   ViewMode,
   ToastMessage,
+  ActiveTimerState,
 } from '../types';
+import {
+  ACTIVE_TIMER_STORAGE_KEY,
+  normalizeTimerSessions,
+  parseActiveTimerState,
+  secondsToMinutes,
+} from '../utils/timerUtils';
+import { defaultTimerCoordinator } from '../utils/timerCoordinator';
 import {
   getDB,
   initializeDatabaseWithSeedData,
@@ -81,6 +89,13 @@ interface OrganiserContextType {
   archiveTask: (id: string) => Promise<void>;
   unarchiveTask: (id: string) => Promise<void>;
 
+  activeTimer: ActiveTimerState | null;
+  startTimer: (taskId: string) => Promise<void>;
+  pauseTimer: () => Promise<void>;
+  resumeTimer: () => Promise<void>;
+  stopTimer: () => Promise<void>;
+  resetTimer: (taskId: string) => Promise<void>;
+
   updatePriority: (priority: Priority) => Promise<void>;
   addPriority: (priority: Priority) => Promise<void>;
   deletePriority: (id: string) => Promise<void>;
@@ -124,6 +139,15 @@ export const OrganiserProvider: React.FC<{ children: ReactNode }> = ({ children 
   const [activeFocusTaskId, setActiveFocusTaskId] = useState<string | null>(null);
 
   const [tasks, setTasks] = useState<Task[]>([]);
+  const [activeTimer, setActiveTimer] = useState<ActiveTimerState | null>(() => {
+    try {
+      const saved = localStorage.getItem(ACTIVE_TIMER_STORAGE_KEY);
+      return parseActiveTimerState(saved);
+    } catch (e) {
+      console.warn('Failed to read active task timer from storage:', e);
+      return null;
+    }
+  });
   const [priorities, setPriorities] = useState<Priority[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
   const [projects, setProjects] = useState<Project[]>([]);
@@ -204,6 +228,14 @@ export const OrganiserProvider: React.FC<{ children: ReactNode }> = ({ children 
         setNotes(data.notes);
         setTemplates(data.templates);
         setSettings(data.settings);
+
+        // Reconcile activeTimer with loaded tasks using coordinator authoritative state
+        try {
+          const authoritativeTimer = await defaultTimerCoordinator.reconcileOnStartup(data.tasks);
+          setActiveTimer(authoritativeTimer);
+        } catch (e) {
+          console.warn('Failed to reconcile active timer on startup:', e);
+        }
       } catch (err) {
         console.error('Failed to initialize IndexedDB:', err);
       } finally {
@@ -211,6 +243,53 @@ export const OrganiserProvider: React.FC<{ children: ReactNode }> = ({ children 
       }
     }
     init();
+
+    // Multi-tab sync listener for active timer state
+    const handleStorageChange = async (e: StorageEvent) => {
+      if (e.key === ACTIVE_TIMER_STORAGE_KEY) {
+        try {
+          // Re-read authoritative state and fresh task data from IndexedDB
+          const authoritative = await defaultTimerCoordinator.getAuthoritativeTimer();
+          setActiveTimer(authoritative);
+
+          // Update tasks selectively from DB:
+          // 1. Remove any tasks that were deleted in the authoritative database.
+          // 2. Merge latest timerSessions and aggregates for existing tasks.
+          // 3. Add any new tasks added in another tab.
+          // In-flight local text edits on surviving tasks remain untouched.
+          const db = await getDB();
+          const dbTasks = await db.getAll('tasks');
+          setTasks((prevTasks) => {
+            const dbTaskMap = new Map(dbTasks.map((t) => [t.id, t]));
+            // Filter out tasks deleted in DB, update surviving ones with authoritative timer metrics
+            const updatedExisting = prevTasks
+              .filter((localTask) => dbTaskMap.has(localTask.id))
+              .map((localTask) => {
+                const fromDb = dbTaskMap.get(localTask.id)!;
+                return {
+                  ...localTask,
+                  timerSessions: fromDb.timerSessions,
+                  totalTrackedSeconds: fromDb.totalTrackedSeconds,
+                  actualTime: fromDb.actualTime,
+                  updatedAt: fromDb.updatedAt,
+                };
+              });
+
+            // Append any tasks created in another tab that are not in local state
+            const localIds = new Set(prevTasks.map((t) => t.id));
+            const newFromDb = dbTasks.filter((t) => !localIds.has(t.id));
+
+            return [...updatedExisting, ...newFromDb];
+          });
+        } catch {
+          // Fallback to parsed notification value if DB query fails
+          const parsed = parseActiveTimerState(e.newValue);
+          setActiveTimer(parsed);
+        }
+      }
+    };
+    window.addEventListener('storage', handleStorageChange);
+    return () => window.removeEventListener('storage', handleStorageChange);
   }, []);
 
   useEffect(() => {
@@ -319,12 +398,23 @@ export const OrganiserProvider: React.FC<{ children: ReactNode }> = ({ children 
     const taskToDelete = tasks.find((t) => t.id === id);
     if (!taskToDelete) return;
 
+    let finalTaskToDelete = taskToDelete;
+    try {
+      const { flushedTask } = await defaultTimerCoordinator.handleTaskLifecycleTermination(id);
+      if (flushedTask) {
+        finalTaskToDelete = flushedTask;
+      }
+      setActiveTimer(null);
+    } catch (e) {
+      console.error('Failed to coordinate timer stop on task deletion:', e);
+    }
+
     setTasks((prev) => prev.filter((t) => t.id !== id));
     await deleteTaskFromDB(id);
 
-    addToast(`Deleted "${taskToDelete.title.substring(0, 20)}..."`, 'info', async () => {
-      setTasks((prev) => [taskToDelete, ...prev]);
-      await saveTaskToDB(taskToDelete);
+    addToast(`Deleted "${finalTaskToDelete.title.substring(0, 20)}..."`, 'info', async () => {
+      setTasks((prev) => [finalTaskToDelete, ...prev]);
+      await saveTaskToDB(finalTaskToDelete);
     });
   };
 
@@ -334,8 +424,23 @@ export const OrganiserProvider: React.FC<{ children: ReactNode }> = ({ children 
 
     const newCompleted = !task.completed;
     const nowIso = new Date().toISOString();
+
+    // If task is being marked completed, stop active timer atomically via coordinator
+    let taskWithTimer = task;
+    if (newCompleted) {
+      try {
+        const { flushedTask } = await defaultTimerCoordinator.handleTaskLifecycleTermination(id);
+        if (flushedTask) {
+          taskWithTimer = flushedTask;
+        }
+        setActiveTimer(null);
+      } catch (e) {
+        console.error('Failed to coordinate timer stop on task completion:', e);
+      }
+    }
+
     const updatedTask: Task = {
-      ...task,
+      ...taskWithTimer,
       completed: newCompleted,
       completedAt: newCompleted ? nowIso : undefined,
       updatedAt: nowIso,
@@ -367,6 +472,9 @@ export const OrganiserProvider: React.FC<{ children: ReactNode }> = ({ children 
             completed: false,
             completedAt: undefined,
             archived: false,
+            actualTime: 0,
+            totalTrackedSeconds: 0,
+            timerSessions: [],
             subtasks: (task.subtasks || []).map((st) => ({
               ...st,
               id: 'sub-' + Date.now() + '-' + Math.random().toString(36).substring(2, 5),
@@ -389,13 +497,13 @@ export const OrganiserProvider: React.FC<{ children: ReactNode }> = ({ children 
         async () => {
           // Undo: Revert the original completed task
           setTasks((prev) => {
-            let list = prev.map((t) => (t.id === id ? task : t));
+            let list = prev.map((t) => (t.id === id ? taskWithTimer : t));
             if (generatedId) {
               list = list.filter((t) => t.id !== generatedId);
             }
             return list;
           });
-          await saveTaskToDB(task);
+          await saveTaskToDB(taskWithTimer);
           if (generatedId) {
             await deleteTaskFromDB(generatedId);
           }
@@ -430,13 +538,13 @@ export const OrganiserProvider: React.FC<{ children: ReactNode }> = ({ children 
       addToast(toastMessage, 'success', async () => {
         // Undo action just reverts the parent task state
         setTasks((prev) => {
-          let list = prev.map((t) => (t.id === id ? task : t));
+          let list = prev.map((t) => (t.id === id ? taskWithTimer : t));
           if (orphan && !list.some((t) => t.id === orphan!.id)) {
             list = [orphan, ...list];
           }
           return list;
         });
-        await saveTaskToDB(task);
+        await saveTaskToDB(taskWithTimer);
         if (orphan) {
           await saveTaskToDB(orphan);
         }
@@ -532,12 +640,23 @@ export const OrganiserProvider: React.FC<{ children: ReactNode }> = ({ children 
     const task = tasks.find((t) => t.id === id);
     if (!task) return;
 
-    const updated: Task = { ...task, archived: true, updatedAt: new Date().toISOString() };
+    let taskWithTimer = task;
+    try {
+      const { flushedTask } = await defaultTimerCoordinator.handleTaskLifecycleTermination(id);
+      if (flushedTask) {
+        taskWithTimer = flushedTask;
+      }
+      setActiveTimer(null);
+    } catch (e) {
+      console.error('Failed to coordinate timer stop on task archival:', e);
+    }
+
+    const updated: Task = { ...taskWithTimer, archived: true, updatedAt: new Date().toISOString() };
     setTasks((prev) => prev.map((t) => (t.id === id ? updated : t)));
     await saveTaskToDB(updated);
     addToast('Task moved to archive', 'info', async () => {
-      setTasks((prev) => prev.map((t) => (t.id === id ? task : t)));
-      await saveTaskToDB(task);
+      setTasks((prev) => prev.map((t) => (t.id === id ? taskWithTimer : t)));
+      await saveTaskToDB(taskWithTimer);
     });
   };
 
@@ -551,6 +670,150 @@ export const OrganiserProvider: React.FC<{ children: ReactNode }> = ({ children 
     addToast('Task restored from archive', 'success', async () => {
       setTasks((prev) => prev.map((t) => (t.id === id ? task : t)));
       await saveTaskToDB(task);
+    });
+  };
+
+  const startTimer = async (taskId: string) => {
+    const task = tasks.find((t) => t.id === taskId);
+    if (!task) {
+      addToast('Cannot start timer: Task not found', 'error');
+      return;
+    }
+    if (task.completed) {
+      addToast('Cannot start timer on a completed task', 'warning');
+      return;
+    }
+    if (task.archived) {
+      addToast('Cannot start timer on an archived task', 'warning');
+      return;
+    }
+
+    try {
+      const { activeTimer: newActive, updatedTasks } = await defaultTimerCoordinator.startTimer(taskId);
+      setActiveTimer(newActive);
+      if (updatedTasks.length > 0) {
+        setTasks((prev) =>
+          prev.map((t) => {
+            const updated = updatedTasks.find((u) => u.id === t.id);
+            return updated || t;
+          })
+        );
+      }
+    } catch (e: any) {
+      console.error('Failed to start timer:', e);
+      addToast(e?.message || 'Failed to start timer', 'error');
+    }
+  };
+
+  const pauseTimer = async () => {
+    try {
+      const { activeTimer: pausedActive, updatedTasks } = await defaultTimerCoordinator.pauseTimer();
+      setActiveTimer(pausedActive);
+      if (updatedTasks.length > 0) {
+        setTasks((prev) =>
+          prev.map((t) => {
+            const updated = updatedTasks.find((u) => u.id === t.id);
+            return updated || t;
+          })
+        );
+      }
+    } catch (e: any) {
+      console.error('Failed to pause timer:', e);
+      addToast(e?.message || 'Failed to pause timer', 'error');
+    }
+  };
+
+  const resumeTimer = async () => {
+    try {
+      const { activeTimer: resumedActive } = await defaultTimerCoordinator.resumeTimer();
+      setActiveTimer(resumedActive);
+    } catch (e: any) {
+      console.error('Failed to resume timer:', e);
+      addToast(e?.message || 'Failed to resume timer', 'error');
+    }
+  };
+
+  const stopTimer = async () => {
+    try {
+      const { updatedTasks } = await defaultTimerCoordinator.stopTimer();
+      setActiveTimer(null);
+      if (updatedTasks.length > 0) {
+        setTasks((prev) =>
+          prev.map((t) => {
+            const updated = updatedTasks.find((u) => u.id === t.id);
+            return updated || t;
+          })
+        );
+      }
+    } catch (e: any) {
+      console.error('Failed to stop timer:', e);
+      addToast(e?.message || 'Failed to stop timer', 'error');
+    }
+  };
+
+  const resetTimer = async (taskId: string) => {
+    const task = tasks.find((t) => t.id === taskId);
+    if (!task) return;
+
+    const previousSessions = task.timerSessions || [];
+    const previousTotalSeconds = task.totalTrackedSeconds || 0;
+    const previousActualTime = task.actualTime || 0;
+    const previousActive = activeTimer && activeTimer.taskId === taskId ? activeTimer : null;
+
+    try {
+      const { activeTimer: newActive, updatedTasks } = await defaultTimerCoordinator.resetTimer(taskId);
+      setActiveTimer(newActive);
+      if (updatedTasks.length > 0) {
+        setTasks((prev) =>
+          prev.map((t) => {
+            const updated = updatedTasks.find((u) => u.id === t.id);
+            return updated || t;
+          })
+        );
+      }
+    } catch (e: any) {
+      console.error('Failed to reset timer:', e);
+      addToast(e?.message || 'Failed to reset timer in storage', 'error');
+      return;
+    }
+
+    addToast('Timer reset', 'info', async () => {
+      // Undo reset
+      setTasks((prev) =>
+        prev.map((t) =>
+          t.id === taskId
+            ? {
+                ...t,
+                timerSessions: previousSessions,
+                totalTrackedSeconds: previousTotalSeconds,
+                actualTime: previousActualTime,
+              }
+            : t
+        )
+      );
+      await saveTaskToDB({
+        ...task,
+        timerSessions: previousSessions,
+        totalTrackedSeconds: previousTotalSeconds,
+        actualTime: previousActualTime,
+      });
+      if (previousActive) {
+        try {
+          // Check if another task has become active in the meantime before resurrecting previousActive
+          const currentAuthoritative = await defaultTimerCoordinator.getAuthoritativeTimer();
+          if (!currentAuthoritative) {
+            if (previousActive.isRunning) {
+              await defaultTimerCoordinator.startTimer(previousActive.taskId, Date.parse(previousActive.startTime));
+            } else {
+              await defaultTimerCoordinator.startTimer(previousActive.taskId, Date.parse(previousActive.startTime));
+              await defaultTimerCoordinator.pauseTimer(Date.parse(previousActive.startTime));
+            }
+            setActiveTimer(previousActive);
+          }
+        } catch (e) {
+          console.warn('Failed to restore active timer on undo reset:', e);
+        }
+      }
     });
   };
 
@@ -830,6 +1093,13 @@ export const OrganiserProvider: React.FC<{ children: ReactNode }> = ({ children 
           completed,
           completedAt,
           archived: !!t.archived,
+          timerSessions: normalizeTimerSessions(t.timerSessions),
+          totalTrackedSeconds: typeof t.totalTrackedSeconds === 'number' && !isNaN(t.totalTrackedSeconds) && t.totalTrackedSeconds >= 0
+            ? Math.floor(t.totalTrackedSeconds)
+            : (Array.isArray(t.timerSessions) ? t.timerSessions.reduce((acc: number, s: any) => acc + (s?.durationSeconds || 0), 0) : 0),
+          actualTime: typeof t.actualTime === 'number' && !isNaN(t.actualTime) && t.actualTime >= 0
+            ? Math.floor(t.actualTime)
+            : (typeof t.totalTrackedSeconds === 'number' ? secondsToMinutes(t.totalTrackedSeconds) : 0),
           subtasks: Array.isArray(t.subtasks)
             ? t.subtasks.map((st) => ({
                 id: st.id || 'sub-' + Date.now() + '-' + Math.random().toString(36).substring(2, 5),
@@ -839,6 +1109,9 @@ export const OrganiserProvider: React.FC<{ children: ReactNode }> = ({ children 
             : [],
         };
       });
+
+      await defaultTimerCoordinator.stopTimer();
+      setActiveTimer(null);
 
       const newPriorities = Array.isArray(parsed.priorities) && parsed.priorities.length ? parsed.priorities : seedData.priorities;
       const newCategories = Array.isArray(parsed.categories) && parsed.categories.length ? parsed.categories : seedData.categories;
@@ -890,6 +1163,8 @@ export const OrganiserProvider: React.FC<{ children: ReactNode }> = ({ children 
 
     // 2. Perform clear & re-seed
     try {
+      await defaultTimerCoordinator.stopTimer();
+      setActiveTimer(null);
       await clearAllDataFromDB();
       const data = await initializeDatabaseWithSeedData();
       setTasks(data.tasks);
@@ -1010,6 +1285,12 @@ export const OrganiserProvider: React.FC<{ children: ReactNode }> = ({ children 
         applyTemplate,
         archiveTask,
         unarchiveTask,
+        activeTimer,
+        startTimer,
+        pauseTimer,
+        resumeTimer,
+        stopTimer,
+        resetTimer,
         updatePriority,
         addPriority,
         deletePriority,

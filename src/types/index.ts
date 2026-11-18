@@ -33,14 +33,30 @@ export interface Subtask {
   completed: boolean;
 }
 
+export interface TimerSession {
+  id: string;
+  startTime: string; // ISO 8601 string
+  endTime?: string; // ISO 8601 string
+  durationSeconds: number; // accumulated elapsed seconds for this closed session
+}
+
+export interface ActiveTimerState {
+  taskId: string;
+  startTime: string; // ISO 8601 string of current running segment
+  isRunning: boolean;
+  sessionId?: string; // Stable session identifier for idempotency across retries
+}
+
 export interface Task {
   id: string;
   title: string;
   description?: string;
   dueDate: string; // YYYY-MM-DD
   dueTime?: string; // HH:mm format
-  duration?: number; // in minutes
-  actualTime?: number; // in minutes
+  duration?: number; // Estimated duration in minutes
+  actualTime?: number; // Total tracked time in minutes
+  totalTrackedSeconds?: number; // Total tracked time in seconds
+  timerSessions?: TimerSession[]; // List of completed tracking intervals
   priorityId: string;
   categoryId: string;
   tags: string[];

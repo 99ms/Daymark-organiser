@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { OrganiserProvider, useOrganiser } from './context/OrganiserContext';
 import { Sidebar } from './components/Sidebar';
 import { Header } from './components/Header';
+import { GlobalTimerIndicator } from './components/GlobalTimerIndicator';
 import { ToastContainer } from './components/ToastContainer';
 import { TaskEditorModal } from './components/TaskEditorModal';
 import { KeyboardShortcutsModal } from './components/KeyboardShortcutsModal';
@@ -138,6 +139,7 @@ const AppContent: React.FC = () => {
 
       <div className="main-layout">
         <Header onOpenShortcutsModal={() => setIsShortcutsOpen(true)} />
+        <GlobalTimerIndicator />
 
         <main className="main-content">
           {currentView === 'overview' && <OverviewView onEditTask={handleEditTask} />}
